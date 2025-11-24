@@ -33,6 +33,7 @@ export interface ManualItem {
   isExpanded: boolean
   modelId?: number
   isValid: boolean
+  isTouched: boolean
 }
 
 export const CATEGORIES = [
@@ -174,12 +175,14 @@ interface ItemFormProps {
   onChange: (updates: Partial<ManualItem>) => void
   onDelete?: () => void
   isSingleMode?: boolean
+  showValidation?: boolean
 }
 
-export function ItemForm({ item, onChange, onDelete, isSingleMode = false }: ItemFormProps) {
+export function ItemForm({ item, onChange, onDelete, isSingleMode = false, showValidation = false }: ItemFormProps) {
   const [brandOptions, setBrandOptions] = useState<{value: string, label: string}[]>([])
   const [modelOptions, setModelOptions] = useState<{value: string, label: string}[]>([])
   const [modelSuggestions, setModelSuggestions] = useState<any[]>([])
+  const shouldShowValidation = showValidation || item.isTouched
 
   // Search brands
   useEffect(() => {
@@ -218,7 +221,7 @@ export function ItemForm({ item, onChange, onDelete, isSingleMode = false }: Ite
   }, [item.category, item.is_fragile, item.weight_kg, onChange])
 
   const handleUpdate = (field: keyof ManualItem, value: any) => {
-    const updates: Partial<ManualItem> = { [field]: value }
+    const updates: Partial<ManualItem> = { [field]: value, isTouched: true }
 
     // Logic auto-fill name
     if (field === "brand" || field === "model") {
@@ -265,6 +268,9 @@ export function ItemForm({ item, onChange, onDelete, isSingleMode = false }: Ite
     onChange(updates)
   }
 
+  const showNameError = shouldShowValidation && !item.name && !(item.brand && item.model)
+  const showQuantityError = shouldShowValidation && (!item.quantity || item.quantity < 1)
+
   return (
     <div className="space-y-4 animate-in slide-in-from-top-2 duration-200">
         {/* Brand & Model */}
@@ -300,8 +306,11 @@ export function ItemForm({ item, onChange, onDelete, isSingleMode = false }: Ite
                     value={item.name}
                     onChange={(e) => handleUpdate("name", e.target.value)}
                     placeholder="Ví dụ: Tủ lạnh 2 cánh"
-                    className={cn("h-9", !item.name && !item.brand && "border-destructive")}
+                    className={cn("h-9", showNameError && "border-destructive focus-visible:ring-destructive")}
                 />
+                {showNameError && (
+                  <p className="text-xs text-destructive mt-1">Nhap ten hoac Thuong hieu + Model</p>
+                )}
             </div>
             <div className="space-y-1.5">
                 <Label className="text-xs">Phân loại</Label>
@@ -325,8 +334,11 @@ export function ItemForm({ item, onChange, onDelete, isSingleMode = false }: Ite
                     min={1}
                     value={item.quantity}
                     onChange={(e) => handleUpdate("quantity", Number(e.target.value))}
-                    className="h-9"
+                    className={cn("h-9", showQuantityError && "border-destructive focus-visible:ring-destructive")}
                 />
+                {showQuantityError && (
+                  <p className="text-xs text-destructive mt-1">So luong toi thieu la 1</p>
+                )}
             </div>
             <div className="space-y-1.5">
                 <Label className="text-xs">Cân nặng (kg)</Label>

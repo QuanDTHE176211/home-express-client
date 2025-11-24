@@ -40,11 +40,15 @@ const AUTH_DEBUG = process.env.NODE_ENV === "development" && process.env.NEXT_PU
  * User data structure matching Spring Boot backend
  */
 interface User {
-  user_id: number
+  user_id?: number
+  userId?: number
   email: string
   role: "CUSTOMER" | "TRANSPORT" | "MANAGER"
-  is_active: boolean
-  is_verified: boolean
+  is_active?: boolean
+  isActive?: boolean
+  is_verified?: boolean
+  isVerified?: boolean
+  [key: string]: any
 }
 
 /**

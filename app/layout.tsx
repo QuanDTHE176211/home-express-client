@@ -6,6 +6,7 @@ import { Suspense } from "react"
 import { AuthProvider } from "@/contexts/auth-context"
 import { LanguageProvider } from "@/contexts/language-context"
 import { WebSocketProviderWrapper } from "@/components/providers/websocket-provider-wrapper"
+import { NotificationsProvider } from "@/hooks/use-notifications"
 import { ErrorBoundary } from "@/components/error-boundary"
 import { OfflineDetector } from "@/components/offline-detector"
 import "./globals.css"
@@ -80,7 +81,9 @@ export default function RootLayout({
           <LanguageProvider>
             <AuthProvider>
               <WebSocketProviderWrapper>
-                <Suspense fallback={<div>Loading...</div>}>{children}</Suspense>
+                <NotificationsProvider>
+                  <Suspense fallback={<div>Loading...</div>}>{children}</Suspense>
+                </NotificationsProvider>
               </WebSocketProviderWrapper>
             </AuthProvider>
           </LanguageProvider>

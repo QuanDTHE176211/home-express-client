@@ -20,7 +20,7 @@ export function PasswordStrengthMeter({ password, showRequirements = true }: Pas
   const label = getPasswordStrengthLabel(strength)
 
   const requirements = [
-    { label: "Ít nhất 8 ký tự", met: password.length >= 8 },
+    { label: "Ít nhất 10 ký tự", met: password.length >= 10 },
     { label: "Chữ hoa và chữ thường", met: /[a-z]/.test(password) && /[A-Z]/.test(password) },
     { label: "Có số", met: /\d/.test(password) },
     { label: "Ký tự đặc biệt (@$!%*?&#)", met: /[@$!%*?&#]/.test(password) },

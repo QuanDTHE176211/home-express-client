@@ -14,10 +14,11 @@ import { RoleBadge } from "@/components/dashboard/role-badge"
 import { StatusBadge } from "@/components/dashboard/status-badge"
 import { User, Mail, Phone, MapPin, Calendar, CheckCircle, XCircle, Edit, ArrowLeft, Package, Star } from "lucide-react"
 import { formatDate } from "@/lib/format"
-import type { User as UserType, Customer, Transport, Manager } from "@/types"
+import type { User as UserType, Customer, Transport, Manager, Vehicle } from "@/types"
 import { useToast } from "@/hooks/use-toast"
 import { adminNavItems } from "@/lib/admin-nav-config"
 import { logAuditAction } from "@/lib/audit-logger"
+import { normalizeVehicleStatus, vehicleStatusColors, vehicleStatusLabels } from "@/lib/vehicle-utils"
 
 interface UserWithProfile {
   user: UserType
@@ -32,6 +33,25 @@ export default function UserDetailPage() {
   const { toast } = useToast()
   const [userData, setUserData] = useState<UserWithProfile | null>(null)
   const [isLoading, setIsLoading] = useState(true)
+  const [vehicles, setVehicles] = useState<Vehicle[]>([])
+  const [isLoadingVehicles, setIsLoadingVehicles] = useState(false)
+
+  const fetchVehicles = async (transportId: number) => {
+    if (!transportId) return
+    try {
+      setIsLoadingVehicles(true)
+      const response = await apiClient.getAdminTransportVehicles(transportId)
+      setVehicles(response.vehicles || [])
+    } catch (error) {
+      toast({
+        title: "Lỗi",
+        description: "Không tải được danh sách phương tiện",
+        variant: "destructive",
+      })
+    } finally {
+      setIsLoadingVehicles(false)
+    }
+  }
 
   useEffect(() => {
     if (!loading && (!currentUser || currentUser.role !== "MANAGER")) {
@@ -48,6 +68,13 @@ export default function UserDetailPage() {
         const data = (response as any).data || response
         if (data.user && data.profile) {
           setUserData(data as UserWithProfile)
+          if (data.user.role === "TRANSPORT") {
+            const transportProfile = data.profile as Transport
+            const transportId = transportProfile?.transportId || data.user.userId
+            fetchVehicles(transportId)
+          } else {
+            setVehicles([])
+          }
         } else {
           throw new Error("Invalid response structure")
         }
@@ -71,11 +98,11 @@ export default function UserDetailPage() {
   const handleActivate = async () => {
     if (!userData) return
     try {
-      await apiClient.activateUser(userData.user.user_id)
+      await apiClient.activateUser(userData.user.userId)
       await logAuditAction({
         action: "USER_ACTIVATED",
         target_type: "USER",
-        target_id: userData.user.user_id,
+        target_id: userData.user.userId,
       })
       toast({
         title: "Thành công",
@@ -83,7 +110,7 @@ export default function UserDetailPage() {
       })
       setUserData({
         ...userData,
-        user: { ...userData.user, is_active: true },
+        user: { ...userData.user, isActive: true },
       })
     } catch (error) {
       toast({
@@ -97,11 +124,11 @@ export default function UserDetailPage() {
   const handleDeactivate = async () => {
     if (!userData) return
     try {
-      await apiClient.deactivateUser(userData.user.user_id, "Deactivated by admin")
+      await apiClient.deactivateUser(userData.user.userId, "Deactivated by admin")
       await logAuditAction({
         action: "USER_DEACTIVATED",
         target_type: "USER",
-        target_id: userData.user.user_id,
+        target_id: userData.user.userId,
         details: { reason: "Deactivated by admin" },
       })
       toast({
@@ -110,7 +137,7 @@ export default function UserDetailPage() {
       })
       setUserData({
         ...userData,
-        user: { ...userData.user, is_active: false },
+        user: { ...userData.user, isActive: false },
       })
     } catch (error) {
       toast({
@@ -150,21 +177,21 @@ export default function UserDetailPage() {
               <h1 className="text-3xl font-bold tracking-tight">
                 {profile
                   ? isCustomer
-                    ? (profile as Customer).full_name
+                    ? (profile as Customer).fullName
                     : isTransport
-                      ? (profile as Transport).company_name
-                      : (profile as Manager).full_name
+                      ? (profile as Transport).companyName
+                      : (profile as Manager).fullName
                   : user.email}
               </h1>
               <p className="text-muted-foreground mt-1">{user.email}</p>
             </div>
           </div>
           <div className="flex items-center gap-2">
-            <Button variant="outline" size="sm">
+            <Button variant="outline" size="sm" onClick={() => router.push(`/admin/users/${user.userId}/edit`)}>
               <Edit className="h-4 w-4 mr-2" />
-              Chỉnh sửa
+              Chỉnh sửa phần này em chưa làm
             </Button>
-            {user.is_active ? (
+            {user.isActive ? (
               <Button variant="outline" size="sm" onClick={handleDeactivate} className="text-error bg-transparent">
                 <XCircle className="h-4 w-4 mr-2" />
                 Vô hiệu hóa
@@ -196,7 +223,7 @@ export default function UserDetailPage() {
               <CheckCircle className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <StatusBadge active={user.is_active} />
+              <StatusBadge active={!!user.isActive} />
             </CardContent>
           </Card>
 
@@ -206,8 +233,8 @@ export default function UserDetailPage() {
               <CheckCircle className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <Badge variant={user.is_verified ? "default" : "secondary"}>
-                {user.is_verified ? "Đã xác minh" : "Chưa xác minh"}
+              <Badge variant={user.isVerified ? "default" : "secondary"}>
+                {user.isVerified ? "Đã xác minh" : "Chưa xác minh"}
               </Badge>
             </CardContent>
           </Card>
@@ -220,8 +247,8 @@ export default function UserDetailPage() {
                   <Package className="h-4 w-4 text-muted-foreground" />
                 </CardHeader>
                 <CardContent>
-                  <div className="text-2xl font-bold">{(profile as Transport).completed_bookings}</div>
-                  <p className="text-xs text-muted-foreground">Tổng: {(profile as Transport).total_bookings} chuyến</p>
+                  <div className="text-2xl font-bold">{(profile as Transport).completedBookings}</div>
+                  <p className="text-xs text-muted-foreground">Tổng: {(profile as Transport).totalBookings} chuyến</p>
                 </CardContent>
               </Card>
 
@@ -231,7 +258,7 @@ export default function UserDetailPage() {
                   <Star className="h-4 w-4 text-muted-foreground" />
                 </CardHeader>
                 <CardContent>
-                  <div className="text-2xl font-bold">{((profile as Transport).average_rating || 0).toFixed(1)}</div>
+                  <div className="text-2xl font-bold">{((profile as Transport).averageRating || 0).toFixed(1)}</div>
                   <p className="text-xs text-muted-foreground">Trung bình</p>
                 </CardContent>
               </Card>
@@ -300,7 +327,7 @@ export default function UserDetailPage() {
                     <div>
                       <p className="text-sm font-medium">Ngày tạo</p>
                       <p className="text-sm text-muted-foreground">
-                        {(user as any).created_at ? formatDate((user as any).created_at) : "N/A"}
+                        {(user as any).createdAt ? formatDate((user as any).createdAt) : "N/A"}
                       </p>
                     </div>
                   </div>
@@ -313,27 +340,27 @@ export default function UserDetailPage() {
                       <div>
                         <p className="text-sm font-medium">Giấy phép kinh doanh</p>
                         <p className="text-sm text-muted-foreground">
-                          {(profile as Transport).business_license_number}
+                          {(profile as Transport).businessLicenseNumber}
                         </p>
                       </div>
                       <div>
                         <p className="text-sm font-medium">Mã số thuế</p>
-                        <p className="text-sm text-muted-foreground">{(profile as Transport).tax_code}</p>
+                        <p className="text-sm text-muted-foreground">{(profile as Transport).taxCode}</p>
                       </div>
                       <div>
                         <p className="text-sm font-medium">Trạng thái xác minh</p>
                         <Badge
                           variant={
-                            (profile as Transport).verification_status === "APPROVED"
+                            (profile as Transport).verificationStatus === "APPROVED"
                               ? "default"
-                              : (profile as Transport).verification_status === "PENDING"
+                              : (profile as Transport).verificationStatus === "PENDING"
                                 ? "secondary"
                                 : "destructive"
                           }
                         >
-                          {(profile as Transport).verification_status === "APPROVED"
+                          {(profile as Transport).verificationStatus === "APPROVED"
                             ? "Đã xác minh"
-                            : (profile as Transport).verification_status === "PENDING"
+                            : (profile as Transport).verificationStatus === "PENDING"
                               ? "Chờ xác minh"
                               : "Từ chối"}
                         </Badge>
@@ -363,7 +390,37 @@ export default function UserDetailPage() {
                   <CardTitle>Phương tiện</CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <p className="text-sm text-muted-foreground">Chưa có phương tiện nào</p>
+                  {isLoadingVehicles ? (
+                    <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                      <div className="h-4 w-4 animate-spin rounded-full border-2 border-muted-foreground border-t-transparent" />
+                      <span>Đang tải danh sách phương tiện...</span>
+                    </div>
+                  ) : vehicles.length === 0 ? (
+                    <p className="text-sm text-muted-foreground">Chưa có phương tiện nào</p>
+                  ) : (
+                    <div className="space-y-3">
+                      {vehicles.map((vehicle) => {
+                        const status = normalizeVehicleStatus((vehicle as any).status)
+                        const vehicleId = vehicle.vehicle_id ?? vehicle.vehicleId ?? vehicle.license_plate
+                        const vehicleType = (vehicle as any).type ?? (vehicle as any).vehicleType
+
+                        return (
+                          <div key={vehicleId} className="flex items-center justify-between rounded-md border p-3">
+                            <div>
+                              <p className="font-medium">{vehicle.model || "Chưa có tên xe"}</p>
+                              <p className="text-sm text-muted-foreground">
+                                {(vehicle.license_plate || (vehicle as any).licensePlate) ?? "Không có biển số"}
+                                {vehicleType ? ` • ${vehicleType}` : ""}
+                              </p>
+                            </div>
+                            <Badge className={vehicleStatusColors[status] ?? ""}>
+                              {vehicleStatusLabels[status] ?? status}
+                            </Badge>
+                          </div>
+                        )
+                      })}
+                    </div>
+                  )}
                 </CardContent>
               </Card>
             </TabsContent>
@@ -384,4 +441,3 @@ export default function UserDetailPage() {
     </DashboardLayout>
   )
 }
-

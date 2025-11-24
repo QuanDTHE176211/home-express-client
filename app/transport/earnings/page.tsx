@@ -287,7 +287,7 @@ export default function TransportEarningsPage() {
           </CardHeader>
           <CardContent>
             <div className="space-y-4">
-              {stats.monthly_breakdown.map((item) => (
+              {stats.monthly_breakdown.map((item: any) => (
                 <div key={item.month} className="space-y-2">
                   <div className="flex items-center justify-between text-sm">
                     <span className="font-medium">{item.month}</span>
@@ -300,7 +300,7 @@ export default function TransportEarningsPage() {
                     <div
                       className="h-full bg-accent-green transition-all duration-300"
                       style={{
-                        width: `${(item.revenue / Math.max(...stats.monthly_breakdown.map((r) => r.revenue))) * 100}%`,
+                        width: `${(item.revenue / Math.max(...stats.monthly_breakdown.map((r: any) => r.revenue))) * 100}%`,
                       }}
                     />
                   </div>
@@ -435,4 +435,3 @@ export default function TransportEarningsPage() {
     </DashboardLayout>
   )
 }
-

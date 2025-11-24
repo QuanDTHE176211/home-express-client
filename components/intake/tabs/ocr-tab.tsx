@@ -58,7 +58,7 @@ export function OCRTab({ onAddCandidates }: OCRTabProps) {
   const handleAddAll = () => {
     if (!results) return
 
-    const candidates: ItemCandidate[] = results.items.map((item, index) => ({
+    const candidates: ItemCandidate[] = results.items.map((item: any, index: number) => ({
       id: `ocr-${Date.now()}-${index}`,
       name: item.name,
       category_id: null,
@@ -139,7 +139,7 @@ export function OCRTab({ onAddCandidates }: OCRTabProps) {
                   </Button>
                 </div>
                 <div className="space-y-2">
-                  {results.items.map((item, index) => (
+                  {results.items.map((item: any, index: number) => (
                     <div key={index} className="p-3 bg-muted rounded-lg flex items-center justify-between">
                       <div>
                         <div className="font-medium">{item.name}</div>

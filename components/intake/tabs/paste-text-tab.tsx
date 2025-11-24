@@ -58,7 +58,8 @@ export function PasteTextTab({ onAddCandidates }: PasteTextTabProps) {
         declared_value: "",
       }))
       setResults(items)
-      setParserUsed(response.data.metadata?.parser || "unknown")
+      const metadata = (response.data as any)?.metadata
+      setParserUsed(metadata?.parser || "unknown")
     } catch (err) {
       console.error(err)
     } finally {

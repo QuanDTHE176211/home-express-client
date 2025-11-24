@@ -57,8 +57,8 @@ export default function BookingDetailPage() {
   const [showUploadDialog, setShowUploadDialog] = useState(false)
   const [showFileDisputeDialog, setShowFileDisputeDialog] = useState(false)
   const [selectedDispute, setSelectedDispute] = useState<Dispute | null>(null)
-  const [disputes, setDisputes] = useState<Dispute[]>([])
-  const [isLoadingDisputes, setIsLoadingDisputes] = useState(false)
+  const [disputes, setTranh ch?p] = useState<Dispute[]>([])
+  const [isLoadingTranh ch?p, setIsLoadingTranh ch?p] = useState(false)
 
   // Load evidence
   const loadEvidence = useCallback(async () => {
@@ -77,27 +77,27 @@ export default function BookingDetailPage() {
   }, [bookingId])
 
   // Load disputes
-  const loadDisputes = useCallback(async () => {
+  const loadTranh ch?p = useCallback(async () => {
     if (!bookingId) return
 
-    setIsLoadingDisputes(true)
+    setIsLoadingTranh ch?p(true)
     try {
-      const response = await apiClient.getBookingDisputes(bookingId)
-      setDisputes(response.disputes)
+      const response = await apiClient.getBookingTranh ch?p(bookingId)
+      setTranh ch?p(response.disputes)
     } catch (error) {
       console.error("Failed to load disputes:", error)
       toast.error("Failed to load disputes")
     } finally {
-      setIsLoadingDisputes(false)
+      setIsLoadingTranh ch?p(false)
     }
   }, [bookingId])
 
   useEffect(() => {
     if (bookingId) {
       loadEvidence()
-      loadDisputes()
+      loadTranh ch?p()
     }
-  }, [bookingId, loadEvidence, loadDisputes])
+  }, [bookingId, loadEvidence, loadTranh ch?p])
 
   // Setup real-time SSE updates
   const { isConnected } = useBookingEvents({
@@ -125,7 +125,7 @@ export default function BookingDetailPage() {
     onDisputeUpdate: (event) => {
       console.log("[Booking Detail] Dispute update:", event)
       // Refresh disputes when there's an update
-      loadDisputes()
+      loadTranh ch?p()
     },
     showToasts: true,
     autoReconnect: true,
@@ -153,14 +153,14 @@ export default function BookingDetailPage() {
         className: string
       }
     > = {
-      PENDING: { label: "Cho xu ly", className: "bg-amber-100 text-amber-700 border-amber-200" },
-      QUOTED: { label: "Da bao gia", className: "bg-blue-100 text-blue-700 border-blue-200" },
-      CONFIRMED: { label: "Da xac nhan", className: "bg-indigo-100 text-indigo-700 border-indigo-200" },
-      IN_PROGRESS: { label: "Dang thuc hien", className: "bg-sky-100 text-sky-700 border-sky-200" },
-      COMPLETED: { label: "Hoan thanh", className: "bg-accent-green/10 text-accent-green border-accent-green" },
-      CONFIRMED_BY_CUSTOMER: { label: "Da xac nhan hoan tat", className: "bg-green-100 text-green-700 border-green-200" },
-      REVIEWED: { label: "Da danh gia", className: "bg-green-100 text-green-700 border-green-200" },
-      CANCELLED: { label: "Da huy", className: "bg-red-100 text-red-700 border-red-200" },
+      PENDING: { label: "Chờ xử lý", className: "bg-amber-100 text-amber-700 border-amber-200" },
+      QUOTED: { label: "Đã báo giá", className: "bg-blue-100 text-blue-700 border-blue-200" },
+      CONFIRMED: { label: "Đã xác nhận", className: "bg-indigo-100 text-indigo-700 border-indigo-200" },
+      IN_PROGRESS: { label: "Đang thực hiện", className: "bg-sky-100 text-sky-700 border-sky-200" },
+      COMPLETED: { label: "Hoàn thành", className: "bg-accent-green/10 text-accent-green border-accent-green" },
+      CONFIRMED_BY_CUSTOMER: { label: "Đã xác nhận hoàn tất", className: "bg-green-100 text-green-700 border-green-200" },
+      REVIEWED: { label: "Đã đánh giá", className: "bg-green-100 text-green-700 border-green-200" },
+      CANCELLED: { label: "Đã hủy", className: "bg-red-100 text-red-700 border-red-200" },
     }
 
     const match = config[status] || config.PENDING
@@ -175,12 +175,12 @@ export default function BookingDetailPage() {
   const handleCancel = async () => {
     setIsCancelling(true)
     try {
-      const result = await apiClient.cancelBooking(bookingId, "KhÃ¡ch hÃ ng há»§y")
+      const result = await apiClient.cancelBooking(bookingId, "Khách hàng hủy")
       toast.success(result.message)
       mutate()
       router.push("/customer/bookings")
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : "CÃ³ lá»—i xáº£y ra")
+      toast.error(error instanceof Error ? error.message : "Có lỗi xảy ra")
     } finally {
       setIsCancelling(false)
     }
@@ -209,7 +209,7 @@ export default function BookingDetailPage() {
 
   const handleDisputeSuccess = () => {
     setShowFileDisputeDialog(false)
-    loadDisputes()
+    loadTranh ch?p()
     toast.success("Dispute filed successfully")
   }
 
@@ -227,7 +227,7 @@ export default function BookingDetailPage() {
 
   if (isLoading) {
     return (
-      <DashboardLayout navItems={navItems} title="Chi tiáº¿t booking">
+      <DashboardLayout navItems={navItems} title="Chi tiết booking">
         <div className="max-w-6xl mx-auto px-6 space-y-6">
           <Skeleton className="h-10 w-64" />
           <div className="grid gap-6 lg:grid-cols-3">
@@ -247,14 +247,14 @@ export default function BookingDetailPage() {
 
   if (isError || !booking) {
     return (
-      <DashboardLayout navItems={navItems} title="Chi tiáº¿t booking">
+      <DashboardLayout navItems={navItems} title="Chi tiết booking">
         <div className="max-w-6xl mx-auto px-6">
           <div className="text-center py-12">
             <AlertCircle className="h-12 w-12 text-destructive mx-auto mb-4" />
-            <h2 className="text-2xl font-bold mb-2">KhÃ´ng tÃ¬m tháº¥y booking</h2>
-            <p className="text-muted-foreground mb-4">Booking nÃ y khÃ´ng tá»“n táº¡i hoáº·c báº¡n khÃ´ng cÃ³ quyá»n truy cáº­p</p>
+            <h2 className="text-2xl font-bold mb-2">Không tìm thấy booking</h2>
+            <p className="text-muted-foreground mb-4">Booking này không tồn tại hoặc bạn không có quyền truy cập</p>
             <Button asChild className="bg-accent-green hover:bg-accent-green-dark">
-              <Link href="/customer/bookings">Quay láº¡i danh sÃ¡ch</Link>
+              <Link href="/customer/bookings">Quay lại danh sách</Link>
             </Button>
           </div>
         </div>
@@ -294,7 +294,7 @@ export default function BookingDetailPage() {
     ].filter(Boolean)
 
     if (!parts.length) {
-      return names.isLoading ? "Dang tai dia chi..." : ""
+      return names.isLoading ? "Đang tải địa chỉ..." : ""
     }
 
     return parts.join(", ")
@@ -308,13 +308,13 @@ export default function BookingDetailPage() {
 
   const transportInfo = (booking.transport || {}) as any
   const transportName =
-    transportInfo.companyName || transportInfo.company_name || transportInfo.transport_name || "Nha xe"
+    transportInfo.companyName || transportInfo.company_name || transportInfo.transport_name || "Nhà xe"
   const transportId =
     transportInfo.transportId ??
     (transportInfo as any)?.transport_id ??
     booking.transport_id ??
     0
-  const customerName = (booking as any).customer_name || booking.pickup_contact_name || "Khach hang"
+  const customerName = (booking as any).customer_name || booking.pickup_contact_name || "Khách hàng"
   const customerId = booking.customer_id || 0
 
   return (
@@ -324,7 +324,7 @@ export default function BookingDetailPage() {
         <div className="flex items-center justify-between">
           <div>
             <h1 className="text-3xl font-bold tracking-tight">Booking #{booking.booking_id}</h1>
-            <p className="text-muted-foreground mt-1">Táº¡o lÃºc {formatDate(booking.created_at)}</p>
+            <p className="text-muted-foreground mt-1">Tạo lúc {formatDate(booking.created_at)}</p>
           </div>
           {renderStatusBadge(booking.status)}
         </div>
@@ -335,7 +335,7 @@ export default function BookingDetailPage() {
             {/* Status Timeline */}
             <Card className="hover:shadow-md transition-shadow">
               <CardHeader>
-                <CardTitle>Tráº¡ng thÃ¡i</CardTitle>
+                <CardTitle>Trạng thái</CardTitle>
               </CardHeader>
               <CardContent>
                 <BookingTimeline currentStatus={booking.status as import("@/types").BookingStatus} history={statusHistory || []} />
@@ -345,7 +345,7 @@ export default function BookingDetailPage() {
             {/* Route */}
             <Card className="hover:shadow-md transition-shadow">
               <CardHeader>
-                <CardTitle>Lá»™ trÃ¬nh</CardTitle>
+                <CardTitle>Lộ trình</CardTitle>
               </CardHeader>
               <CardContent>
                 <div className="space-y-4">
@@ -353,14 +353,14 @@ export default function BookingDetailPage() {
                   <div className="flex items-start gap-3">
                     <MapPin className="h-5 w-5 text-success mt-1" />
                     <div className="flex-1">
-                      <p className="font-medium mb-1">Äá»‹a chá»‰ Ä‘Ã³n</p>
+                      <p className="font-medium mb-1">Địa chỉ đón</p>
                       <p className="text-sm text-muted-foreground">{formatAddress("pickup")}</p>
                       <p className="text-sm text-muted-foreground mt-1">
-                        LiÃªn há»‡: {booking.pickup_contact_name} - {booking.pickup_contact_phone}
+                        Liên hệ: {booking.pickup_contact_name} - {booking.pickup_contact_phone}
                       </p>
                       {booking.pickup_floor !== null && (
                         <p className="text-sm text-muted-foreground">
-                          Táº§ng {booking.pickup_floor} {booking.pickup_has_elevator && "â€¢ CÃ³ thang mÃ¡y"}
+                          Tầng {booking.pickup_floor} {booking.pickup_has_elevator && "• Có thang máy"}
                         </p>
                       )}
                     </div>
@@ -377,14 +377,14 @@ export default function BookingDetailPage() {
                   <div className="flex items-start gap-3">
                     <MapPin className="h-5 w-5 text-destructive mt-1" />
                     <div className="flex-1">
-                      <p className="font-medium mb-1">Äá»‹a chá»‰ giao</p>
+                      <p className="font-medium mb-1">Địa chỉ giao</p>
                       <p className="text-sm text-muted-foreground">{formatAddress("delivery")}</p>
                       <p className="text-sm text-muted-foreground mt-1">
-                        LiÃªn há»‡: {booking.delivery_contact_name} - {booking.delivery_contact_phone}
+                        Liên hệ: {booking.delivery_contact_name} - {booking.delivery_contact_phone}
                       </p>
                       {booking.delivery_floor !== null && (
                         <p className="text-sm text-muted-foreground">
-                          Táº§ng {booking.delivery_floor} {booking.delivery_has_elevator && "â€¢ CÃ³ thang mÃ¡y"}
+                          Tầng {booking.delivery_floor} {booking.delivery_has_elevator && "• Có thang máy"}
                         </p>
                       )}
                     </div>
@@ -399,7 +399,7 @@ export default function BookingDetailPage() {
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2">
                     <Package className="h-5 w-5" />
-                    Äá»“ Ä‘áº¡c ({booking.items.length})
+                    Đồ đạc ({booking.items.length})
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
@@ -409,13 +409,13 @@ export default function BookingDetailPage() {
                         <div className="flex-1">
                           <p className="font-medium">{item.name}</p>
                           <p className="text-sm text-muted-foreground">
-                            Sá»‘ lÆ°á»£ng: {item.quantity}
-                            {item.weight && ` â€¢ ${item.weight} kg`}
+                            Số lượng: {item.quantity}
+                            {item.weight && ` • ${item.weight} kg`}
                           </p>
                           <div className="flex flex-wrap gap-1 mt-2">
-                            {item.is_fragile && <Badge variant="secondary">Dá»… vá»¡</Badge>}
-                            {item.requires_disassembly && <Badge variant="secondary">Cáº§n thÃ¡o láº¯p</Badge>}
-                            {item.requires_packaging && <Badge variant="secondary">Cáº§n Ä‘Ã³ng gÃ³i</Badge>}
+                            {item.is_fragile && <Badge variant="secondary">Dễ vỡ</Badge>}
+                            {item.requires_disassembly && <Badge variant="secondary">Cần tháo lắp</Badge>}
+                            {item.requires_packaging && <Badge variant="secondary">Cần đóng gói</Badge>}
                           </div>
                         </div>
                       </div>
@@ -465,12 +465,12 @@ export default function BookingDetailPage() {
               />
             </div>
 
-            {/* Disputes Section */}
+            {/* Tranh ch?p Section */}
             <div className="space-y-4">
               <div className="flex items-center justify-between">
                 <h3 className="text-lg font-semibold flex items-center gap-2">
                   <AlertCircle className="h-5 w-5" />
-                  Disputes
+                  Tranh ch?p
                   {disputes.length > 0 && (
                     <Badge variant="secondary">{disputes.length}</Badge>
                   )}
@@ -481,7 +481,7 @@ export default function BookingDetailPage() {
                   onClick={() => setShowFileDisputeDialog(true)}
                 >
                   <AlertCircle className="h-4 w-4 mr-2" />
-                  File Dispute
+                  G?i tranh ch?p
                 </Button>
               </div>
 
@@ -493,7 +493,7 @@ export default function BookingDetailPage() {
                     onClick={handleBackToDisputeList}
                     className="mb-4"
                   >
-                    ← Back to Disputes
+                    ← Quay lại tranh chấp
                   </Button>
                   <DisputeDetail
                     disputeId={selectedDispute.disputeId}
@@ -508,7 +508,7 @@ export default function BookingDetailPage() {
               )}
             </div>
 
-            {/* File Dispute Dialog */}
+            {/* G?i tranh ch?p Dialog */}
             <FileDisputeDialog
               open={showFileDisputeDialog}
               onOpenChange={setShowFileDisputeDialog}
@@ -534,37 +534,37 @@ export default function BookingDetailPage() {
             {/* Summary */}
             <Card className="hover:shadow-md transition-shadow">
               <CardHeader>
-                <CardTitle>TÃ³m táº¯t</CardTitle>
+                <CardTitle>Tóm tắt</CardTitle>
               </CardHeader>
               <CardContent className="space-y-3">
                 <div className="flex justify-between text-sm">
-                  <span className="text-muted-foreground">MÃ£ booking</span>
+                  <span className="text-muted-foreground">Mã booking</span>
                   <span className="font-mono">#{booking.booking_id}</span>
                 </div>
                 <div className="flex justify-between text-sm">
-                  <span className="text-muted-foreground">NgÃ y táº¡o</span>
+                  <span className="text-muted-foreground">Ngày tạo</span>
                   <span>{formatDate(booking.created_at)}</span>
                 </div>
                 <div className="flex justify-between text-sm">
-                  <span className="text-muted-foreground">NgÃ y Ä‘Ã³n</span>
+                  <span className="text-muted-foreground">Ngày đón</span>
                   <span>{formatDate(booking.preferred_date)}</span>
                 </div>
                 {booking.distance_km && (
                   <div className="flex justify-between text-sm">
-                    <span className="text-muted-foreground">Khoáº£ng cÃ¡ch</span>
+                    <span className="text-muted-foreground">Khoảng cách</span>
                     <span>{booking.distance_km} km</span>
                   </div>
                 )}
                 <Separator />
                 {booking.estimated_price && (
                   <div className="flex justify-between items-center">
-                    <span className="font-medium">GiÃ¡ Æ°á»›c tÃ­nh</span>
+                    <span className="font-medium">Giá ước tính</span>
                     <span className="text-xl font-bold">{formatVND(booking.estimated_price)}</span>
                   </div>
                 )}
                 {booking.final_price && (
                   <div className="flex justify-between items-center text-success">
-                    <span className="font-medium">GiÃ¡ cuá»‘i cÃ¹ng</span>
+                    <span className="font-medium">Giá cuối cùng</span>
                     <span className="text-xl font-bold">{formatVND(booking.final_price)}</span>
                   </div>
                 )}
@@ -574,14 +574,14 @@ export default function BookingDetailPage() {
             {/* Actions */}
             <Card className="hover:shadow-md transition-shadow">
               <CardHeader>
-                <CardTitle>HÃ nh Ä‘á»™ng</CardTitle>
+                <CardTitle>Hành động</CardTitle>
               </CardHeader>
               <CardContent className="space-y-2">
                 {booking.status === "QUOTED" && booking.quotationsCount > 0 && (
                   <Button className="w-full bg-accent-green hover:bg-accent-green-dark" asChild>
                     <Link href={`/customer/bookings/${booking.booking_id}/quotations`}>
                       <FileText className="mr-2 h-4 w-4" />
-                      Xem {booking.quotationsCount} bÃ¡o giÃ¡
+                      Xem {booking.quotationsCount} báo giá
                     </Link>
                   </Button>
                 )}
@@ -590,7 +590,7 @@ export default function BookingDetailPage() {
                   <Button variant="outline" className="w-full bg-transparent" asChild>
                     <Link href={`/customer/contracts/${booking.contractId}`}>
                       <FileText className="mr-2 h-4 w-4" />
-                      Xem há»£p Ä‘á»“ng
+                      Xem hợp đồng
                     </Link>
                   </Button>
                 )}
@@ -608,7 +608,7 @@ export default function BookingDetailPage() {
                   <Button className="w-full bg-accent-green hover:bg-accent-green-dark" asChild>
                     <Link href={`/customer/rate/${booking.booking_id}`}>
                       <FileText className="mr-2 h-4 w-4" />
-                      ÄÃ¡nh giÃ¡ chuyáº¿n Ä‘i
+                      Đánh giá chuyến đi
                     </Link>
                   </Button>
                 )}
@@ -618,23 +618,23 @@ export default function BookingDetailPage() {
                     <AlertDialogTrigger asChild>
                       <Button variant="destructive" className="w-full" disabled={isCancelling}>
                         <X className="mr-2 h-4 w-4" />
-                        Há»§y chuyáº¿n
+                        Hủy chuyến
                       </Button>
                     </AlertDialogTrigger>
                     <AlertDialogContent>
                       <AlertDialogHeader>
-                        <AlertDialogTitle>XÃ¡c nháº­n há»§y chuyáº¿n</AlertDialogTitle>
-                        <AlertDialogDescription>Báº¡n cÃ³ cháº¯c muá»‘n há»§y chuyáº¿n nÃ y khÃ´ng?</AlertDialogDescription>
+                        <AlertDialogTitle>Xác nhận hủy chuyến</AlertDialogTitle>
+                        <AlertDialogDescription>Bạn có chắc muốn hủy chuyến này không?</AlertDialogDescription>
                         {cancellationInfo.cancellationFee !== null && (
                           <span className="block mt-2 text-destructive font-medium">
-                            PhÃ­ há»§y: {formatVND(cancellationInfo.cancellationFee)}
+                            Phí hủy: {formatVND(cancellationInfo.cancellationFee)}
                           </span>
                         )}
                       </AlertDialogHeader>
                       <AlertDialogFooter>
-                        <AlertDialogCancel>Quay láº¡i</AlertDialogCancel>
+                        <AlertDialogCancel>Quay lại</AlertDialogCancel>
                         <AlertDialogAction onClick={handleCancel} className="bg-destructive hover:bg-destructive/90">
-                          XÃ¡c nháº­n há»§y
+                          Xác nhận hủy
                         </AlertDialogAction>
                       </AlertDialogFooter>
                     </AlertDialogContent>

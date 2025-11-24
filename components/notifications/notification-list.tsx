@@ -1,5 +1,6 @@
 "use client"
 
+import Link from "next/link"
 import { useNotifications } from "@/hooks/use-notifications"
 import { NotificationItem } from "./notification-item"
 import { Button } from "@/components/ui/button"
@@ -56,7 +57,7 @@ export function NotificationList() {
 
       <div className="p-2">
         <Button variant="ghost" className="w-full" asChild>
-          <a href="/notifications">Xem tất cả thông báo</a>
+          <Link href="/notifications">Xem tất cả thông báo</Link>
         </Button>
       </div>
     </div>

@@ -175,10 +175,10 @@ export default function TransportSettingsPage() {
       return
     }
 
-    if (newPassword.length < 8) {
+    if (newPassword.length < 10) {
       toast({
         title: "Loi",
-        description: "Mat khau phai co it nhat 8 ky tu.",
+        description: "Mat khau phai co it nhat 10 ky tu.",
         variant: "destructive",
       })
       return
@@ -647,7 +647,7 @@ export default function TransportSettingsPage() {
                       {showNewPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                     </Button>
                   </div>
-                  <p className="text-xs text-muted-foreground">Mật khẩu phải có ít nhất 8 ký tự</p>
+                  <p className="text-xs text-muted-foreground">Mật khẩu phải có ít nhất 10 ký tự</p>
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="confirm-password">Xác nhận mật khẩu mới</Label>

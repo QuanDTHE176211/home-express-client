@@ -131,8 +131,8 @@ export default function AdminSettingsPage() {
             showError("Confirm password does not match.")
             return
         }
-        if (newPassword.length < 8) {
-            showError("New password must contain at least 8 characters.")
+        if (newPassword.length < 10) {
+            showError("New password must contain at least 10 characters.")
             return
         }
         setSaving(true)
@@ -410,7 +410,7 @@ export default function AdminSettingsPage() {
                                                 {showNewPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                                             </Button>
                                         </div>
-                                        <p className="text-xs text-muted-foreground">Passwords must contain at least 8 characters.</p>
+                                        <p className="text-xs text-muted-foreground">Passwords must contain at least 10 characters.</p>
                                     </div>
                                     <div className="space-y-2">
                                         <Label htmlFor="confirm-password">Confirm new password</Label>

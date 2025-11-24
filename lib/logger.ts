@@ -87,30 +87,37 @@ class Logger {
    * Send log to external monitoring service
    */
   private sendToMonitoring(entry: LogEntry): void {
-    // TODO: Integrate with monitoring service
-    // Examples:
-    
-    // Sentry
-    // if (window.Sentry && entry.level === 'error') {
-    //   window.Sentry.captureException(new Error(entry.message), {
-    //     extra: entry.context,
-    //     tags: { userId: entry.userId }
-    //   })
-    // }
+    if (typeof window === "undefined") return
 
-    // LogRocket
-    // if (window.LogRocket) {
-    //   window.LogRocket.log(entry.level, entry.message, entry.context)
-    // }
+    // Store in local history for debugging
+    const history = (window as any).__LOG_HISTORY__ || []
+    history.push(entry)
+    if (history.length > 100) history.shift()
+    ;(window as any).__LOG_HISTORY__ = history
 
-    // Custom API endpoint
-    // if (this.isProduction) {
-    //   fetch('/api/logs', {
-    //     method: 'POST',
-    //     headers: { 'Content-Type': 'application/json' },
-    //     body: JSON.stringify(entry)
-    //   }).catch(() => {}) // Fail silently
-    // }
+    // Integration with Sentry
+    const Sentry = (window as any).Sentry
+    if (Sentry && entry.level === "error") {
+      Sentry.captureException(new Error(entry.message), {
+        extra: entry.context,
+        tags: { userId: entry.userId },
+      })
+    }
+
+    // Integration with LogRocket
+    const LogRocket = (window as any).LogRocket
+    if (LogRocket) {
+      LogRocket.log(entry.level, entry.message, entry.context)
+    }
+
+    // Custom API endpoint (if configured)
+    if (this.isProduction && process.env.NEXT_PUBLIC_LOGGING_ENDPOINT) {
+      fetch(process.env.NEXT_PUBLIC_LOGGING_ENDPOINT, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(entry),
+      }).catch(() => {}) // Fail silently
+    }
   }
 
   /**

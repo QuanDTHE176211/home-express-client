@@ -21,6 +21,8 @@ export default function ForgotPasswordPage() {
   const [step, setStep] = useState<"email" | "otp">("email")
   const [error, setError] = useState("")
   const [loading, setLoading] = useState(false)
+  const [resendLoading, setResendLoading] = useState(false)
+  const [resendSuccess, setResendSuccess] = useState(false)
 
   const translations = t.forgotPassword
 
@@ -65,6 +67,23 @@ export default function ForgotPasswordPage() {
     }
   }
 
+  const handleResend = async () => {
+    setResendLoading(true)
+    setResendSuccess(false)
+    setError("")
+
+    try {
+      // Re-trigger forgot password to resend OTP
+      await apiClient.forgotPassword(email)
+      setResendSuccess(true)
+      setTimeout(() => setResendSuccess(false), 5000)
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Gửi lại mã thất bại")
+    } finally {
+      setResendLoading(false)
+    }
+  }
+
   return (
     <div className="min-h-screen flex overflow-hidden bg-white">
       <div className="relative flex flex-col justify-center bg-white lg:flex-[0_0_52%] w-full lg:w-auto px-6 sm:px-12 lg:px-20 py-12 animate-fade-in-up z-10 lg:clip-path-angled lg:shadow-[20px_0_60px_-15px_rgba(0,0,0,0.12)]">
@@ -97,6 +116,15 @@ export default function ForgotPasswordPage() {
             {error && (
               <Alert variant="destructive" className="animate-shake">
                 <AlertDescription>{error}</AlertDescription>
+              </Alert>
+            )}
+
+            {resendSuccess && (
+              <Alert className="border-green-200 bg-green-50 text-green-900 animate-fade-in-up">
+                <CheckCircle2 className="h-5 w-5 text-green-600" />
+                <AlertDescription className="ml-2">
+                  Đã gửi lại mã OTP
+                </AlertDescription>
               </Alert>
             )}
 
@@ -159,30 +187,42 @@ export default function ForgotPasswordPage() {
                 </InputOTP>
 
                 <div className="flex flex-col w-full gap-3">
-                  <Button
-                    type="submit"
-                    className="w-full h-13 bg-gradient-to-br from-foreground via-gray-900 to-gray-800 hover:from-gray-900 hover:via-foreground hover:to-gray-900 text-background font-semibold rounded-xl shadow-lg shadow-gray-900/25 hover:shadow-xl hover:shadow-gray-900/30 transition-all duration-300 hover:-translate-y-0.5 active:translate-y-0 active:shadow-md"
-                    disabled={loading}
-                  >
-                    {loading ? (
-                      <>
-                        <Loader2 className="mr-2 h-5 w-5 animate-spin" />
-                        Đang xác thực...
-                      </>
-                    ) : (
-                      "Xác thực OTP"
-                    )}
-                  </Button>
-                  
-                  <Button
+                <Button
+                  type="submit"
+                  className="w-full h-13 bg-gradient-to-br from-foreground via-gray-900 to-gray-800 hover:from-gray-900 hover:via-foreground hover:to-gray-900 text-background font-semibold rounded-xl shadow-lg shadow-gray-900/25 hover:shadow-xl hover:shadow-gray-900/30 transition-all duration-300 hover:-translate-y-0.5 active:translate-y-0 active:shadow-md"
+                  disabled={loading}
+                >
+                  {loading ? (
+                    <>
+                      <Loader2 className="mr-2 h-5 w-5 animate-spin" />
+                      Đang xác thực...
+                    </>
+                  ) : (
+                    "Xác thực OTP"
+                  )}
+                </Button>
+
+                <div className="text-sm text-center py-2">
+                  Chưa nhận được mã?{" "}
+                  <button
                     type="button"
-                    variant="ghost"
-                    onClick={() => setStep("email")}
-                    disabled={loading}
-                    className="text-muted-foreground"
+                    onClick={handleResend}
+                    disabled={resendLoading}
+                    className="font-semibold text-accent-green hover:text-accent-green-dark hover:underline transition-colors disabled:opacity-50"
                   >
-                    Quay lại
-                  </Button>
+                    {resendLoading ? "Đang gửi..." : "Gửi lại mã"}
+                  </button>
+                </div>
+                
+                <Button
+                  type="button"
+                  variant="ghost"
+                  onClick={() => setStep("email")}
+                  disabled={loading}
+                  className="text-muted-foreground"
+                >
+                  Quay lại
+                </Button>
                 </div>
               </div>
             )}

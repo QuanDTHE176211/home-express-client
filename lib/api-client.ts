@@ -37,6 +37,10 @@ import type {
   CounterOffer,
   CreateCounterOfferRequest,
   RespondToCounterOfferRequest,
+  User as DomainUser,
+  Customer as DomainCustomer,
+  Transport as DomainTransport,
+  Manager as DomainManager,
 } from "@/types"
 
 // ============================================================================
@@ -99,20 +103,7 @@ const RETRY_CONFIG = {
 // TYPE DEFINITIONS
 // ============================================================================
 
-/**
- * User data structure matching Spring Boot backend
- */
-interface User {
-  user_id: number
-  email: string
-  role: "CUSTOMER" | "TRANSPORT" | "MANAGER"
-  is_active: boolean
-  is_verified: boolean
-}
 
-/**
- * Customer profile data
- */
 interface Customer {
   customer_id: number
   full_name: string
@@ -125,36 +116,7 @@ interface Customer {
   updated_at: string
 }
 
-/**
- * Transport profile data
- */
-interface Transport {
-  transport_id: number
-  company_name: string
-  business_license_number: string
-  tax_code: string
-  phone: string
-  address: string
-  city: string
-  district: string | null
-  ward: string | null
-  verification_status: "PENDING" | "APPROVED" | "REJECTED"
-  verified_at: string | null
-  verified_by: number | null
-  total_bookings: number
-  completed_bookings: number
-  cancelled_bookings: number
-  average_rating: number
-  national_id_number: string | null
-  national_id_type: "CMND" | "CCCD" | null
-  bank_code: string | null
-  bank_name: string | null
-  bank_account_number: string | null
-  bank_account_holder: string | null
-  created_at: string
-  updated_at: string
-  user_id: number
-}
+
 
 /**
  * Manager profile data
@@ -288,6 +250,7 @@ interface AdminDashboardStatsDto {
   activeUsers: number
   inactiveUsers: number
   verifiedUsers: number
+  verifiedTransports: number
   newUsersToday: number
   newUsersThisWeek: number
   newUsersThisMonth: number
@@ -787,7 +750,7 @@ class ApiClient {
       token?: string
       accessToken?: string
       refreshToken?: string
-      user: User
+      user: DomainUser
       message?: string
     }>("/auth/login", {
       method: "POST",
@@ -831,7 +794,7 @@ class ApiClient {
       token?: string
       accessToken?: string
       refreshToken?: string
-      user: User
+      user: DomainUser
       message?: string
     }>("/auth/register", {
       method: "POST",
@@ -850,7 +813,7 @@ class ApiClient {
       token?: string
       accessToken?: string
       refreshToken?: string
-      user: User
+      user: DomainUser
       message?: string
     }>("/auth/verify-registration", {
       method: "POST",
@@ -953,10 +916,10 @@ class ApiClient {
    */
   async getProfile() {
     return this.request<{
-      user: User
-      customer?: Customer
-      transport?: Transport
-      manager?: Manager
+      user: DomainUser
+      customer?: DomainCustomer
+      transport?: DomainTransport
+      manager?: DomainManager
     }>("/users/profile")
   }
 
@@ -966,8 +929,8 @@ class ApiClient {
   async updateProfile(data: UpdateProfilePayload) {
     const payload = this.buildProfileRequestPayload(data as Record<string, unknown>)
     return this.request<{
-      user: User
-      profile: Customer | Transport | Manager
+      user: DomainUser
+      profile: DomainCustomer | DomainTransport | DomainManager
     }>("/users/profile", {
       method: "PUT",
       body: JSON.stringify(payload),
@@ -1034,24 +997,25 @@ class ApiClient {
   async getAdminDashboardStats(): Promise<AdminDashboardStats> {
     const dto = await this.request<AdminDashboardStatsDto>("/admin/dashboard/stats")
     return {
-      total_users: dto.totalUsers ?? 0,
-      total_customers: dto.totalCustomers ?? 0,
-      total_transports: dto.totalTransports ?? 0,
-      total_managers: dto.totalManagers ?? 0,
-      active_users: dto.activeUsers ?? 0,
-      inactive_users: dto.inactiveUsers ?? 0,
-      verified_users: dto.verifiedUsers ?? 0,
-      new_users_today: dto.newUsersToday ?? 0,
-      new_users_this_week: dto.newUsersThisWeek ?? 0,
-      new_users_this_month: dto.newUsersThisMonth ?? 0,
-      user_growth_rate: dto.userGrowthRate ?? "0",
-      pending_transport_verifications: dto.pendingTransportVerifications ?? 0,
-      top_transports:
+      totalUsers: dto.totalUsers ?? 0,
+      totalCustomers: dto.totalCustomers ?? 0,
+      totalTransports: dto.totalTransports ?? 0,
+      totalManagers: dto.totalManagers ?? 0,
+      activeUsers: dto.activeUsers ?? 0,
+      inactiveUsers: dto.inactiveUsers ?? 0,
+      verifiedUsers: dto.verifiedUsers ?? 0,
+      verifiedTransports: dto.verifiedTransports ?? 0,
+      newUsersToday: dto.newUsersToday ?? 0,
+      newUsersThisWeek: dto.newUsersThisWeek ?? 0,
+      newUsersThisMonth: dto.newUsersThisMonth ?? 0,
+      userGrowthRate: parseFloat(dto.userGrowthRate ?? "0"),
+      pendingTransportVerifications: dto.pendingTransportVerifications ?? 0,
+      topTransports:
         dto.topTransports?.map((item) => ({
-          transport_id: item.transportId ?? 0,
-          company_name: item.companyName ?? "",
-          average_rating: item.averageRating ?? 0,
-          completed_bookings: item.completedBookings ?? 0,
+          transportId: item.transportId ?? 0,
+          companyName: item.companyName ?? "",
+          averageRating: item.averageRating ?? 0,
+          completedBookings: item.completedBookings ?? 0,
         })) ?? [],
     }
   }
@@ -1099,10 +1063,10 @@ class ApiClient {
     if (params?.status) queryParams.append("status", params.status)
     if (params?.search) queryParams.append("search", params.search)
 
-    return this.request<{
+    const response = await this.request<{
       users: Array<{
-        user: User
-        profile: Customer | Transport | Manager
+        user: any
+        profile: any
       }>
       pagination: {
         current_page: number
@@ -1111,19 +1075,124 @@ class ApiClient {
         items_per_page: number
       }
     }>(`/admin/users?${queryParams.toString()}`)
+
+    return {
+      users: response.users.map((item) => ({
+        user: {
+          userId: item.user.user_id,
+          email: item.user.email,
+          role: item.user.role,
+          isActive: item.user.is_active,
+          isVerified: item.user.is_verified,
+          avatarUrl: item.user.avatar_url,
+          phone: item.user.phone,
+          createdAt: item.user.created_at,
+        } as DomainUser,
+        profile: this.mapUserProfile(item.profile, item.user.role),
+      })),
+      pagination: response.pagination,
+    }
   }
 
   /**
    * Get user details by ID (Admin only)
    */
   async getUserById(userId: number) {
-    return this.request<{
-      success: boolean
+    const response = await this.request<any>(`/admin/users/${userId}`)
+
+    // Handle both wrapped (success/data) and unwrapped (direct map) responses
+    const data = response.data || response
+    const userObj = data.user
+    const profileObj = data.profile
+
+    return {
+      success: true,
       data: {
-        user: User
-        profile: Customer | Transport | Manager
-      }
-    }>(`/admin/users/${userId}`)
+        user: {
+          userId: userObj.user_id,
+          email: userObj.email,
+          role: userObj.role,
+          isActive: userObj.is_active,
+          isVerified: userObj.is_verified,
+          avatarUrl: userObj.avatar_url,
+          phone: userObj.phone,
+          createdAt: userObj.created_at,
+        } as DomainUser,
+        profile: this.mapUserProfile(profileObj, userObj.role),
+      },
+    }
+  }
+
+  async getAdminTransportVehicles(
+    transportId: number,
+    params?: {
+      status?: string
+      page?: number
+      size?: number
+    },
+  ) {
+    const queryParams = new URLSearchParams()
+    if (params?.status) queryParams.append("status", params.status)
+    if (params?.page) queryParams.append("page", params.page.toString())
+    if (params?.size) queryParams.append("size", params.size.toString())
+
+    const queryString = queryParams.toString()
+    const response = await this.request<any>(
+      `/admin/transports/${transportId}/vehicles${queryString ? `?${queryString}` : ""}`,
+    )
+    const data = response?.data || response
+
+    return {
+      vehicles: data?.vehicles ?? [],
+      pagination: data?.pagination,
+    }
+  }
+
+  private mapUserProfile(profile: any, role: string): DomainCustomer | DomainTransport | DomainManager {
+    if (!profile) return {} as any
+
+    if (role === "CUSTOMER") {
+      return {
+        customerId: profile.customer_id,
+        fullName: profile.full_name,
+        phone: profile.phone,
+        address: profile.address,
+        dateOfBirth: profile.date_of_birth,
+        avatarUrl: profile.avatar_url,
+        preferredLanguage: profile.preferred_language,
+        createdAt: profile.created_at,
+        updatedAt: profile.updated_at,
+      } as DomainCustomer
+    } else if (role === "TRANSPORT") {
+      return {
+        transportId: profile.transport_id,
+        companyName: profile.company_name,
+        businessLicenseNumber: profile.business_license_number,
+        taxCode: profile.tax_code,
+        phone: profile.phone,
+        address: profile.address,
+        city: profile.city,
+        district: profile.district,
+        verificationStatus: profile.verification_status,
+        verifiedAt: profile.verified_at,
+        totalBookings: profile.total_bookings,
+        completedBookings: profile.completed_bookings,
+        averageRating: profile.average_rating,
+        createdAt: profile.created_at,
+      } as DomainTransport
+    } else if (role === "MANAGER") {
+      return {
+        managerId: profile.manager_id,
+        fullName: profile.full_name,
+        phone: profile.phone,
+        employeeId: profile.employee_id,
+        department: profile.department,
+        permissions: profile.permissions,
+        createdAt: profile.created_at,
+        updatedAt: profile.updated_at,
+      } as DomainManager
+    }
+    return {} as any
   }
 
   /**
@@ -1169,8 +1238,11 @@ class ApiClient {
    */
   async verifyTransport(transportId: number, status: "APPROVED" | "REJECTED", notes?: string) {
     return this.request<{ message: string }>(`/admin/transports/${transportId}/verify`, {
-      method: "PUT",
-      body: JSON.stringify({ status, notes }),
+      method: "PATCH",
+      body: JSON.stringify({
+        isVerified: status === "APPROVED",
+        verificationNotes: notes,
+      }),
     })
   }
 
@@ -1206,7 +1278,7 @@ class ApiClient {
     if (params?.search) queryParams.append("search", params.search)
 
     return this.request<{
-      data: { transport: Transport; user: User }[]
+      data: { transport: DomainTransport; user: Omit<DomainUser, 'role'> }[]
       total?: number
       page?: number
       limit?: number
@@ -1676,6 +1748,7 @@ class ApiClient {
 
     return this.request<{
       total_earnings: number
+      current_balance: number
       this_month_earnings: number
       this_month_bookings: number
       pending_amount: number
@@ -1707,6 +1780,39 @@ class ApiClient {
         expected_date: string
       }>
     >("/transport/transactions")
+  }
+
+  /**
+   * Fetches wallet report for transport
+   */
+  async getWalletReport(days: number = 30) {
+    return this.request<{
+      snapshot: {
+        current_balance_vnd: number
+        total_earned_vnd: number
+        total_withdrawn_vnd: number
+        last_transaction_at: string
+      }
+      cashflow: Array<{
+        transaction_id: number
+        amount_vnd: number
+        inflow: boolean
+        created_at: string
+      }>
+      daily_balances: Array<{
+        date: string
+        closing_balance_vnd: number
+      }>
+    }>(`/transport/earnings/wallet-report?days=${days}`)
+  }
+
+  /**
+   * Request a payout for all ready settlements
+   */
+  async requestPayout() {
+    return this.request<any>("/transport/payouts/request", {
+      method: "POST",
+    })
   }
 
   /**
@@ -1842,43 +1948,6 @@ class ApiClient {
   // --------------------------------------------------------------------------
 
   /**
-   * Get pricing rules for all vehicles
-   */
-  async getVehiclePricing() {
-    return this.request<{
-      success: boolean
-      data: {
-        pricingRules: any[]
-      }
-    }>("/transport/pricing/vehicles")
-  }
-
-  /**
-   * Set pricing for vehicle
-   */
-  async setVehiclePricing(data: {
-    vehicleId: number
-    basePrice: number
-    perKmFirst4km: number
-    perKm5To40km: number
-    perKmAfter40km: number
-    peakHourMultiplier: number
-    weekendMultiplier: number
-    holidayMultiplier: number
-    noElevatorFee: number
-    elevatorDiscount: number
-  }) {
-    return this.request<{
-      success: boolean
-      message: string
-      data: { pricingId: number }
-    }>("/transport/pricing/vehicles", {
-      method: "POST",
-      body: JSON.stringify(data),
-    })
-  }
-
-  /**
    * Get pricing rules for categories
    */
   async getCategoryPricing(transportId?: number) {
@@ -1974,22 +2043,37 @@ class ApiClient {
   /**
    * Set pricing by vehicle type (Option A)
    */
-  async setVehiclePricing(data: {
-    transportId: number
-    vehicleType: string
-    basePriceVnd: number
-    perKmFirst4KmVnd: number
-    perKm5To40KmVnd: number
-    perKmAfter40KmVnd: number
-    minChargeVnd: number
-    elevatorBonusVnd: number
-    noElevatorFeePerFloorVnd: number
-    noElevatorFloorThreshold: number
-    peakHourMultiplier: number
-    weekendMultiplier: number
-    validFrom: string
-  }) {
-    return this.request<{ success: boolean; message: string }>("/transport/pricing/vehicles", {
+  async setVehiclePricing(
+    data:
+      | {
+        vehicleId: number
+        basePrice: number
+        perKmFirst4km: number
+        perKm5To40km: number
+        perKmAfter40km: number
+        peakHourMultiplier: number
+        weekendMultiplier: number
+        holidayMultiplier: number
+        noElevatorFee: number
+        elevatorDiscount: number
+      }
+      | {
+        transportId: number
+        vehicleType: string
+        basePriceVnd: number
+        perKmFirst4KmVnd: number
+        perKm5To40KmVnd: number
+        perKmAfter40KmVnd: number
+        minChargeVnd: number
+        elevatorBonusVnd: number
+        noElevatorFeePerFloorVnd: number
+        noElevatorFloorThreshold: number
+        peakHourMultiplier: number
+        weekendMultiplier: number
+        validFrom: string
+      },
+  ) {
+    return this.request<{ success: boolean; message?: string; data?: { pricingId?: number } }>("/transport/pricing/vehicles", {
       method: "POST",
       body: JSON.stringify(data),
     })
@@ -2882,7 +2966,7 @@ class ApiClient {
    */
   async initiateDeposit(data: {
     bookingId: number
-    method: "vnpay" | "momo" | "bank"
+    method: string
   }) {
     return this.request<{
       success: boolean
@@ -2901,7 +2985,7 @@ class ApiClient {
    */
   async initiateRemainingPayment(data: {
     bookingId: number
-    method: "vnpay" | "momo" | "bank"
+    method: string
     tipAmountVnd?: number
     returnUrl?: string
     cancelUrl?: string
@@ -3305,16 +3389,32 @@ class ApiClient {
     formData.append('file', file)
     formData.append('type', type)
 
-    return this.request<{
-      fileUrl: string
-      fileName: string
-      fileSizeBytes: number
-      mimeType: string
+    const response = await this.request<{
+      success?: boolean
+      data?: {
+        fileUrl: string
+        filePath?: string
+        fileName: string
+        fileSizeBytes: number
+        mimeType: string
+      }
+      fileUrl?: string
+      fileName?: string
+      fileSizeBytes?: number
+      mimeType?: string
     }>('/files/upload', {
       method: 'POST',
       body: formData,
       headers: {}, // Let browser set Content-Type with boundary
     })
+
+    return this.unwrapData<{
+      fileUrl: string
+      filePath?: string
+      fileName: string
+      fileSizeBytes: number
+      mimeType: string
+    }>(response)
   }
 
   // ============================================================================
@@ -3471,6 +3571,59 @@ class ApiClient {
       evidenceId: string
     }>(`/customer/disputes/${disputeId}/evidence/${evidenceId}`, {
       method: 'POST',
+    })
+  }
+
+  /**
+   * Get auto-generated estimation from backend
+   * @param data - Estimation request data
+   */
+  async getAutoEstimations(data: {
+    pickup_address: string
+    delivery_address: string
+    items: any[]
+    pickup_floor?: number | null
+    delivery_floor?: number | null
+    has_elevator_pickup?: boolean
+    has_elevator_delivery?: boolean
+    pickup_datetime?: string
+  }) {
+    return this.request<{
+      success: boolean
+      estimations?: Array<{
+        transport_id: number
+        transport_name: string
+        rating: number
+        completed_jobs: number
+        vehicle_id: number
+        vehicle_type: string
+        vehicle_name: string
+        license_plate: string
+        total_price: number
+        estimated_duration: number
+        rank_score: number
+        breakdown: {
+          base_price: number
+          distance_price: number
+          items_price: number
+          floor_fees: number
+          subtotal: number
+          multiplier: number
+        }
+      }>
+      price_range?: {
+        lowest: number
+        highest: number
+        average: number
+      }
+      distance_km?: number
+      estimated_weight_kg?: number
+      recommended_vehicle_type?: string
+      message?: string
+      error?: string
+    }>("/estimation/auto", {
+      method: "POST",
+      body: JSON.stringify(data),
     })
   }
 
@@ -3633,19 +3786,17 @@ class ApiClient {
   }
 
   /**
-   * Upload avatar
+   * Create audit log entry
    */
-  async uploadAvatar(data: FormData) {
-    // Backend endpoint: POST /api/v1/users/profile/avatar
-    // Expects param "avatar" (file)
-    
-    // Ensure the FormData has the correct field name "avatar"
-    // The frontend code in profile page appends "avatar", so it should be fine.
-    
-    return this.request<{ avatar_url: string }>("/users/profile/avatar", {
+  async createAuditLog(data: {
+    action: string
+    targetType: string
+    targetId?: number
+    details?: Record<string, any>
+  }) {
+    return this.request<void>("/audit-logs", {
       method: "POST",
-      body: data,
-      headers: {}, // Let browser set Content-Type with boundary
+      body: JSON.stringify(data),
     })
   }
 }
@@ -3658,13 +3809,6 @@ class ApiClient {
  * Singleton instance of API client
  */
 export const apiClient = new ApiClient()
-
-
-
-
-
-
-
 
 
 

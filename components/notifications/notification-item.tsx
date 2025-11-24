@@ -18,6 +18,8 @@ import {
   MessageSquare,
   Trash2,
   MoreVertical,
+  ShieldCheck,
+  AlertCircle
 } from "lucide-react"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Button } from "@/components/ui/button"
@@ -54,6 +56,8 @@ const notificationIcons: Record<string, React.ReactNode> = {
   REVIEW_RECEIVED: <Star className="h-5 w-5 text-yellow-500" />,
   REVIEW_RESPONSE: <MessageSquare className="h-5 w-5 text-blue-500" />,
   SYSTEM_ANNOUNCEMENT: <Bell className="h-5 w-5 text-gray-500" />,
+  TRANSPORT_VERIFIED: <ShieldCheck className="h-5 w-5 text-green-500" />,
+  TRANSPORT_REJECTED: <AlertCircle className="h-5 w-5 text-red-500" />,
 }
 
 export function NotificationItem({ notification, isSelected, onSelect, onDelete }: NotificationItemProps) {

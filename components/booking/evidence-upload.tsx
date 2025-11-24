@@ -134,12 +134,13 @@ export function EvidenceUpload({ bookingId, onSuccess, onCancel }: EvidenceUploa
 
         // Upload file to server first
         const uploadResult = await apiClient.uploadFile(file, "evidence")
+        const uploadedUrl = uploadResult.filePath || uploadResult.fileUrl
 
         // Create evidence record with uploaded file URL
         await apiClient.uploadBookingEvidence(bookingId, {
           evidenceType,
           fileType,
-          fileUrl: uploadResult.fileUrl,
+          fileUrl: uploadedUrl,
           fileName: uploadResult.fileName,
           mimeType: uploadResult.mimeType,
           fileSizeBytes: uploadResult.fileSizeBytes,
@@ -343,4 +344,3 @@ export function EvidenceUpload({ bookingId, onSuccess, onCancel }: EvidenceUploa
     </Card>
   )
 }
-

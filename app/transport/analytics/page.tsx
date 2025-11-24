@@ -37,6 +37,7 @@ import {
   Legend,
   ResponsiveContainer,
 } from "recharts"
+import type { PerformanceMetrics, PerformanceTrend, CategoryPerformance, VehicleUtilization } from "@/types"
 
 const navItems = [
   { label: "Tổng quan", href: "/transport", icon: "LayoutDashboard" },
@@ -47,47 +48,6 @@ const navItems = [
   { label: "Phân tích", href: "/transport/analytics", icon: "TrendingUp" },
   { label: "Hồ sơ", href: "/transport/profile", icon: "Star" },
 ]
-
-interface PerformanceMetrics {
-  acceptance_rate: number
-  acceptance_rate_change: number
-  avg_response_time_minutes: number
-  response_time_change: number
-  customer_satisfaction: number
-  satisfaction_change: number
-  on_time_delivery_rate: number
-  on_time_change: number
-  completion_rate: number
-  completion_change: number
-  revenue_per_job: number
-  revenue_change: number
-  total_jobs: number
-  jobs_change: number
-  active_vehicles: number
-}
-
-interface PerformanceTrend {
-  date: string
-  jobs_completed: number
-  acceptance_rate: number
-  avg_response_time: number
-  revenue: number
-  satisfaction_score: number
-}
-
-interface CategoryPerformance {
-  category: string
-  jobs: number
-  revenue: number
-  avg_rating: number
-}
-
-interface VehicleUtilization {
-  vehicle_name: string
-  utilization_rate: number
-  jobs_completed: number
-  revenue: number
-}
 
 const COLORS = ["#10b981", "#3b82f6", "#f59e0b", "#ef4444", "#8b5cf6", "#ec4899"]
 

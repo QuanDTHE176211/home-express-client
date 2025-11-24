@@ -3,6 +3,14 @@ import { z } from "zod"
 /**
  * Validation schemas for Member 2 features
  */
+const isValidHttpUrl = (value: string) => {
+  try {
+    const url = new URL(value)
+    return url.protocol === "http:" || url.protocol === "https:"
+  } catch {
+    return false
+  }
+}
 
 // Address validation schema
 export const addressSchema = z.object({
@@ -91,7 +99,17 @@ export const vehicleSchema = z.object({
   hasTailLift: z.boolean().default(false),
   hasTools: z.boolean().default(true),
   description: z.string().max(500).optional(),
-  imageUrl: z.string().url().optional(),
+  imageUrl: z
+    .string()
+    .trim()
+    .refine(
+      (value) => {
+        if (!value) return true
+        return value.startsWith("/uploads/") || isValidHttpUrl(value)
+      },
+      { message: "�_���ng dA�n ���nh khA'ng h���p l���" },
+    )
+    .optional(),
 })
 
 // Vehicle pricing validation schema

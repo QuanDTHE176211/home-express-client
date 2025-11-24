@@ -12,7 +12,7 @@ export function useBookings(params?: {
   sortBy?: string
   sortOrder?: "ASC" | "DESC"
 }) {
-  const { data, error, isLoading, mutate } = useSWR(["/bookings", params], () => apiClient.getBookings(params), {
+  const { data, error, isLoading, mutate } = useSWR(["/bookings", params], () => apiClient.getBookings(params as any), {
     refreshInterval: 30000, // Refresh every 30s
     revalidateOnFocus: true,
   })

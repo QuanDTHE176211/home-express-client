@@ -75,10 +75,10 @@ export default function JobDetailPage() {
         <div className="container max-w-7xl py-10">
           <div className="text-center py-12">
             <AlertCircle className="h-12 w-12 text-destructive mx-auto mb-4" />
-            <h2 className="text-2xl font-bold mb-2">KhÃ´ng tÃ¬m tháº¥y cÃ´ng viá»‡c</h2>
-            <p className="text-muted-foreground mb-4">CÃ´ng viá»‡c nÃ y khÃ´ng tá»“n táº¡i hoáº·c khÃ´ng cÃ²n kháº£ dá»¥ng</p>
+            <h2 className="text-2xl font-bold mb-2">Không tìm thấy công việc</h2>
+            <p className="text-muted-foreground mb-4">Công việc này không tồn tại hoặc không còn khả dụng</p>
             <Button asChild>
-              <Link href="/transport/jobs">Quay láº¡i danh sÃ¡ch</Link>
+              <Link href="/transport/jobs">Quay lại danh sách</Link>
             </Button>
           </div>
         </div>
@@ -118,7 +118,7 @@ export default function JobDetailPage() {
     ].filter(Boolean)
 
     if (!parts.length) {
-      return names.isLoading ? "Dang tai dia chi..." : ""
+      return names.isLoading ? "Đang tải địa chỉ..." : ""
     }
 
     return parts.join(", ")
@@ -126,13 +126,13 @@ export default function JobDetailPage() {
 
   const transportInfo = (booking.transport || {}) as any
   const transportName =
-    transportInfo.companyName || transportInfo.company_name || transportInfo.transport_name || "Nha xe"
+    transportInfo.companyName || transportInfo.company_name || transportInfo.transport_name || "Nhà xe"
   const transportId =
     transportInfo.transportId ??
     (transportInfo as any)?.transport_id ??
     booking.transport_id ??
     0
-  const customerName = booking.pickup_contact_name || "Khach hang"
+  const customerName = booking.pickup_contact_name || "Khách hàng"
   const customerId = booking.customer_id || 0
 
   return (
@@ -146,8 +146,8 @@ export default function JobDetailPage() {
             </Link>
           </Button>
           <div>
-            <h1 className="text-3xl font-bold">Chi tiáº¿t cÃ´ng viá»‡c #{booking.booking_id}</h1>
-            <p className="text-muted-foreground">Xem thÃ´ng tin vÃ  gá»­i bÃ¡o giÃ¡</p>
+            <h1 className="text-3xl font-bold">Chi tiết công việc #{booking.booking_id}</h1>
+            <p className="text-muted-foreground">Xem thông tin và gửi báo giá</p>
           </div>
         </div>
 
@@ -165,7 +165,7 @@ export default function JobDetailPage() {
                 {/* Route */}
                 <Card className="hover:shadow-md transition-shadow">
                   <CardHeader>
-                    <CardTitle>Lá»™ trÃ¬nh</CardTitle>
+                    <CardTitle>Lộ trình</CardTitle>
                   </CardHeader>
                   <CardContent>
                     <div className="space-y-4">
@@ -173,14 +173,14 @@ export default function JobDetailPage() {
                       <div className="flex items-start gap-3">
                         <MapPin className="h-5 w-5 text-success mt-1" />
                         <div className="flex-1">
-                          <p className="font-medium mb-1">Äá»‹a chá»‰ Ä‘Ã³n</p>
+                          <p className="font-medium mb-1">Địa chỉ đón</p>
                           <p className="text-sm text-muted-foreground">{formatAddress("pickup")}</p>
                           <p className="text-sm text-muted-foreground mt-1">
-                            LiÃªn há»‡: {booking.pickup_contact_name} - {booking.pickup_contact_phone}
+                            Liên hệ: {booking.pickup_contact_name} - {booking.pickup_contact_phone}
                           </p>
                           {booking.pickup_floor !== null && (
                             <p className="text-sm text-muted-foreground">
-                              Táº§ng {booking.pickup_floor} {booking.pickup_has_elevator && "â€¢ CÃ³ thang mÃ¡y"}
+                              Tầng {booking.pickup_floor} {booking.pickup_has_elevator && "có thang máy"}
                             </p>
                           )}
                         </div>
@@ -197,14 +197,14 @@ export default function JobDetailPage() {
                       <div className="flex items-start gap-3">
                         <MapPin className="h-5 w-5 text-destructive mt-1" />
                         <div className="flex-1">
-                          <p className="font-medium mb-1">Äá»‹a chá»‰ giao</p>
+                          <p className="font-medium mb-1">Địa chỉ giao</p>
                           <p className="text-sm text-muted-foreground">{formatAddress("delivery")}</p>
                           <p className="text-sm text-muted-foreground mt-1">
-                            LiÃªn há»‡: {booking.delivery_contact_name} - {booking.delivery_contact_phone}
+                            Liên hệ: {booking.delivery_contact_name} - {booking.delivery_contact_phone}
                           </p>
                           {booking.delivery_floor !== null && (
                             <p className="text-sm text-muted-foreground">
-                              Táº§ng {booking.delivery_floor} {booking.delivery_has_elevator && "â€¢ CÃ³ thang mÃ¡y"}
+                              Tầng {booking.delivery_floor} {booking.delivery_has_elevator && "có thang máy"}
                             </p>
                           )}
                         </div>
@@ -220,18 +220,18 @@ export default function JobDetailPage() {
                 {(booking.special_requirements || booking.notes) && (
                   <Card className="hover:shadow-md transition-shadow">
                     <CardHeader>
-                      <CardTitle>YÃªu cáº§u Ä‘áº·c biá»‡t</CardTitle>
+                      <CardTitle>Yêu cầu đặc biệt</CardTitle>
                     </CardHeader>
                     <CardContent className="space-y-3">
                       {booking.special_requirements && (
                         <div>
-                          <p className="text-sm font-medium text-muted-foreground mb-1">YÃªu cáº§u</p>
+                          <p className="text-sm font-medium text-muted-foreground mb-1">Yêu cầu</p>
                           <p className="text-sm">{booking.special_requirements}</p>
                         </div>
                       )}
                       {booking.notes && (
                         <div>
-                          <p className="text-sm font-medium text-muted-foreground mb-1">Ghi chÃº</p>
+                          <p className="text-sm font-medium text-muted-foreground mb-1">Ghi chú</p>
                           <p className="text-sm">{booking.notes}</p>
                         </div>
                       )}
@@ -259,27 +259,27 @@ export default function JobDetailPage() {
             {/* Summary */}
             <Card className="hover:shadow-md transition-shadow">
               <CardHeader>
-                <CardTitle>ThÃ´ng tin</CardTitle>
+                <CardTitle>Thông tin</CardTitle>
               </CardHeader>
               <CardContent className="space-y-3">
                 <div className="flex justify-between text-sm">
-                  <span className="text-muted-foreground">MÃ£ booking</span>
+                  <span className="text-muted-foreground">Mã booking</span>
                   <span className="font-mono">#{booking.booking_id}</span>
                 </div>
                 <div className="flex justify-between text-sm">
-                  <span className="text-muted-foreground">NgÃ y Ä‘Ã³n</span>
+                  <span className="text-muted-foreground">Ngày đón</span>
                   <span>{formatDate(booking.preferred_date)}</span>
                 </div>
                 {booking.distance_km && (
                   <div className="flex justify-between text-sm">
-                    <span className="text-muted-foreground">Khoáº£ng cÃ¡ch</span>
+                    <span className="text-muted-foreground">Khoảng cách</span>
                     <span>{booking.distance_km} km</span>
                   </div>
                 )}
                 <Separator />
                 {booking.estimated_price && (
                   <div className="flex justify-between items-center">
-                    <span className="font-medium">GiÃ¡ Æ°á»›c tÃ­nh</span>
+                    <span className="font-medium">Giá ước tính</span>
                     <span className="text-xl font-bold">{formatVND(booking.estimated_price)}</span>
                   </div>
                 )}
@@ -290,14 +290,14 @@ export default function JobDetailPage() {
             {!showQuotationForm && (
               <Card className="hover:shadow-md transition-shadow">
                 <CardHeader>
-                  <CardTitle>HÃ nh Ä‘á»™ng</CardTitle>
+                  <CardTitle>Hành động</CardTitle>
                 </CardHeader>
                 <CardContent>
                   <Button
                     className="w-full bg-accent-green hover:bg-accent-green/90"
                     onClick={() => setShowQuotationForm(true)}
                   >
-                    Gá»­i bÃ¡o giÃ¡
+                    Gửi báo giá
                   </Button>
                 </CardContent>
               </Card>

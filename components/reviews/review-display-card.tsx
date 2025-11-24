@@ -55,7 +55,7 @@ export function ReviewDisplayCard({ review, showResponse = true }: ReviewDisplay
 
         {review.photo_urls && review.photo_urls.length > 0 && (
           <div className="flex gap-2 flex-wrap">
-            {review.photo_urls.map((url, index) => (
+            {review.photo_urls.map((url: string | null, index: number) => (
               <Image
                 key={index}
                 src={url || "/placeholder.svg"}

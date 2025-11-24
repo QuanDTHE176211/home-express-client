@@ -11,6 +11,8 @@ import { useEffect, useState } from "react"
 import { useRouter } from "next/navigation"
 import { useAuth } from "@/contexts/auth-context"
 import { apiClient } from "@/lib/api-client"
+import { exportToCSV } from "@/lib/export-utils"
+import { logAuditAction } from "@/lib/audit-logger"
 import { DashboardLayout } from "@/components/dashboard/dashboard-layout"
 import { StatCard } from "@/components/dashboard/stat-card"
 import { EncryptedStatsCard } from "@/components/transport/encrypted-stats-card"
@@ -104,8 +106,36 @@ export default function EncryptedTransportDashboard() {
       return
     }
     
-    // TODO: Implement data export with audit logging
-    alert("Chức năng xuất dữ liệu đang được phát triển")
+    try {
+      const exportData = stats.monthlyRevenueSeries.map(item => ({
+        month: item.month,
+        revenue: stats.canViewEncryptedData && item.revenue !== undefined
+          ? item.revenue
+          : item.maskedRevenue
+      }))
+
+      exportToCSV(
+        exportData,
+        `doanh-thu-van-tai-${stats.transportId}-${new Date().toISOString().split('T')[0]}`,
+        [
+          { key: "month", label: "Tháng" },
+          { key: "revenue", label: "Doanh thu" }
+        ]
+      )
+
+      await logAuditAction({
+        action: "DATA_EXPORTED",
+        target_type: "TRANSPORT",
+        target_id: stats.transportId,
+        details: {
+          type: "monthly_revenue",
+          record_count: exportData.length
+        }
+      })
+    } catch (error) {
+      console.error("Export failed:", error)
+      setError("Không thể xuất dữ liệu. Vui lòng thử lại.")
+    }
   }
 
   if (loading || dataLoading) {

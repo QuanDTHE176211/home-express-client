@@ -15,6 +15,7 @@ import { useVehicles } from "@/hooks/use-vehicles"
 import { useToast } from "@/hooks/use-toast"
 import { useDebounce } from "@/lib/debounce"
 import { apiClient } from "@/lib/api-client"
+import { normalizeVehicleStatus } from "@/lib/vehicle-utils"
 import type { Vehicle } from "@/types"
 
 const navItems = [
@@ -43,9 +44,9 @@ export default function VehiclesPage() {
   // Calculate stats
   const stats = {
     total: vehicles.length,
-    available: vehicles.filter((v: Vehicle) => v.status === "available").length,
-    in_use: vehicles.filter((v: Vehicle) => v.status === "in_use").length,
-    maintenance: vehicles.filter((v: Vehicle) => v.status === "maintenance").length,
+    active: vehicles.filter((v: Vehicle) => normalizeVehicleStatus(v.status) === "ACTIVE").length,
+    maintenance: vehicles.filter((v: Vehicle) => normalizeVehicleStatus(v.status) === "UNDER_MAINTENANCE").length,
+    inactive: vehicles.filter((v: Vehicle) => normalizeVehicleStatus(v.status) === "INACTIVE").length,
   }
 
   // Filter vehicles
@@ -133,15 +134,7 @@ export default function VehiclesPage() {
               <CardTitle className="text-sm font-medium">Sẵn sàng</CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold text-accent-green">{stats.available}</div>
-            </CardContent>
-          </Card>
-          <Card className="hover:shadow-md transition-shadow">
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Đang dùng</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold text-amber-600">{stats.in_use}</div>
+              <div className="text-2xl font-bold text-accent-green">{stats.active}</div>
             </CardContent>
           </Card>
           <Card className="hover:shadow-md transition-shadow">
@@ -149,7 +142,15 @@ export default function VehiclesPage() {
               <CardTitle className="text-sm font-medium">Bảo trì</CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold text-red-600">{stats.maintenance}</div>
+              <div className="text-2xl font-bold text-amber-600">{stats.maintenance}</div>
+            </CardContent>
+          </Card>
+          <Card className="hover:shadow-md transition-shadow">
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Không hoạt động</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold text-muted-foreground">{stats.inactive}</div>
             </CardContent>
           </Card>
         </div>
@@ -191,10 +192,9 @@ export default function VehiclesPage() {
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all">Tất cả trạng thái</SelectItem>
-                  <SelectItem value="available">Sẵn sàng</SelectItem>
-                  <SelectItem value="in_use">Đang dùng</SelectItem>
-                  <SelectItem value="maintenance">Bảo trì</SelectItem>
-                  <SelectItem value="inactive">Không hoạt động</SelectItem>
+                  <SelectItem value="ACTIVE">Sẵn sàng</SelectItem>
+                  <SelectItem value="UNDER_MAINTENANCE">Bảo trì</SelectItem>
+                  <SelectItem value="INACTIVE">Không hoạt động</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -254,4 +254,3 @@ export default function VehiclesPage() {
     </DashboardLayout>
   )
 }
-

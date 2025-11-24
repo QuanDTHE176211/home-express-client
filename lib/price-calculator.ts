@@ -155,6 +155,8 @@ function calculateItemsPrice(items: BookingItem[], categoryPricingMap: Map<numbe
   let total = 0
 
   for (const item of items) {
+    if (!item.category_id) continue
+
     const categoryPricing = categoryPricingMap.get(item.category_id)
     if (!categoryPricing) continue
 

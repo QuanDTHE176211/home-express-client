@@ -1,3 +1,5 @@
+import { apiClient } from "@/lib/api-client"
+
 export type AuditAction =
   | "USER_ACTIVATED"
   | "USER_DEACTIVATED"
@@ -15,6 +17,7 @@ export type AuditAction =
   | "BID_ACCEPTED"
   | "BID_REJECTED"
   | "EXCEPTION_UPDATED"
+  | "DATA_EXPORTED"
 
 interface AuditLogEntry {
   action: AuditAction
@@ -25,7 +28,6 @@ interface AuditLogEntry {
 
 export async function logAuditAction(entry: AuditLogEntry): Promise<void> {
   try {
-    // TODO: Implement proper audit logging
     if (process.env.NODE_ENV === "development") {
       console.log("[v0] Audit Log:", {
         timestamp: new Date().toISOString(),
@@ -33,8 +35,13 @@ export async function logAuditAction(entry: AuditLogEntry): Promise<void> {
       })
     }
 
-    // In production, send to backend
-    // await apiClient.createAuditLog(entry)
+    // Send to backend
+    await apiClient.createAuditLog({
+      action: entry.action,
+      targetType: entry.target_type,
+      targetId: entry.target_id,
+      details: entry.details,
+    })
   } catch (error) {
     console.error("[v0] Failed to log audit action:", error)
   }

@@ -29,10 +29,10 @@ export function SecuritySettingsTab() {
       return
     }
 
-    if (newPassword.length < 8) {
+    if (newPassword.length < 10) {
       toast({
         title: "Error",
-        description: "New password must contain at least 8 characters.",
+        description: "New password must contain at least 10 characters.",
         variant: "destructive",
       })
       return
@@ -111,7 +111,7 @@ export function SecuritySettingsTab() {
               {showNewPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
             </Button>
           </div>
-          <p className="text-xs text-muted-foreground">Password must contain at least 8 characters.</p>
+          <p className="text-xs text-muted-foreground">Password must contain at least 10 characters.</p>
         </div>
         <div className="space-y-2">
           <Label htmlFor="confirm-password">Confirm new password</Label>

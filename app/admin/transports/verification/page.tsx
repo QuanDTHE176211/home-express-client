@@ -23,7 +23,7 @@ import { Pagination } from "@/components/admin/pagination"
 
 interface TransportWithUser {
     transport: Transport
-    user: User
+    user: Omit<User, "role">
 }
 
 export default function TransportVerificationPage() {
@@ -61,7 +61,7 @@ export default function TransportVerificationPage() {
                 limit: itemsPerPage,
             })
             setTransports(result.data as TransportWithUser[])
-            const totalItemsValue = result.totalItems ?? result.pagination?.totalItems ?? 0
+            const totalItemsValue = result.total ?? result.pagination?.totalItems ?? 0
             const totalPagesValue = result.totalPages ?? result.pagination?.totalPages ?? 1
             setTotalItems(totalItemsValue)
             setTotalPages(totalPagesValue)
@@ -124,11 +124,11 @@ export default function TransportVerificationPage() {
         if (!selectedTransport) return
 
         try {
-            await apiClient.verifyTransport(selectedTransport.transport.transport_id, "REJECTED", reason)
+            await apiClient.verifyTransport(selectedTransport.transport.transportId, "REJECTED", reason)
             await logAuditAction({
                 action: "TRANSPORT_REJECTED",
                 target_type: "TRANSPORT",
-                target_id: selectedTransport.transport.transport_id,
+                target_id: selectedTransport.transport.transportId,
                 details: { reason },
             })
             toast({
@@ -155,21 +155,21 @@ export default function TransportVerificationPage() {
                         {/* Header */}
                         <div className="flex items-start justify-between">
                             <div>
-                                <h3 className="text-xl font-bold">{transport.company_name}</h3>
+                                <h3 className="text-xl font-bold">{transport.companyName}</h3>
                                 <p className="text-sm text-muted-foreground">{transportUser.email}</p>
                             </div>
                             <Badge
                                 variant={
-                                    transport.verification_status === "APPROVED"
+                                    transport.verificationStatus === "APPROVED"
                                         ? "default"
-                                        : transport.verification_status === "REJECTED"
+                                        : transport.verificationStatus === "REJECTED"
                                             ? "destructive"
                                             : "secondary"
                                 }
                             >
-                                {transport.verification_status === "APPROVED"
+                                {transport.verificationStatus === "APPROVED"
                                     ? "Đã phê duyệt"
-                                    : transport.verification_status === "REJECTED"
+                                    : transport.verificationStatus === "REJECTED"
                                         ? "Đã từ chối"
                                         : "Chờ xác minh"}
                             </Badge>
@@ -184,14 +184,14 @@ export default function TransportVerificationPage() {
                                     <FileText className="h-4 w-4 text-muted-foreground mt-0.5" />
                                     <div>
                                         <p className="text-sm font-medium">Giấy phép kinh doanh</p>
-                                        <p className="text-sm text-muted-foreground">{transport.business_license_number}</p>
+                                        <p className="text-sm text-muted-foreground">{transport.businessLicenseNumber}</p>
                                     </div>
                                 </div>
                                 <div className="flex items-start gap-2">
                                     <FileText className="h-4 w-4 text-muted-foreground mt-0.5" />
                                     <div>
                                         <p className="text-sm font-medium">Mã số thuế</p>
-                                        <p className="text-sm text-muted-foreground">{transport.tax_code}</p>
+                                        <p className="text-sm text-muted-foreground">{transport.taxCode}</p>
                                     </div>
                                 </div>
                                 <div className="flex items-start gap-2">
@@ -213,39 +213,99 @@ export default function TransportVerificationPage() {
                                         </p>
                                     </div>
                                 </div>
-                                {transport.national_id_number && (
+                                {transport.nationalIdNumber && (
                                     <div className="flex items-start gap-2">
                                         <FileText className="h-4 w-4 text-muted-foreground mt-0.5" />
                                         <div>
-                                            <p className="text-sm font-medium">{transport.national_id_type}</p>
-                                            <p className="text-sm text-muted-foreground">{transport.national_id_number}</p>
+                                            <p className="text-sm font-medium">{transport.nationalIdType}</p>
+                                            <p className="text-sm text-muted-foreground">{transport.nationalIdNumber}</p>
                                         </div>
                                     </div>
                                 )}
-                                {transport.bank_account_number && (
+                                {transport.bankAccountNumber && (
                                     <div className="flex items-start gap-2">
                                         <FileText className="h-4 w-4 text-muted-foreground mt-0.5" />
                                         <div>
                                             <p className="text-sm font-medium">Tài khoản ngân hàng</p>
                                             <p className="text-sm text-muted-foreground">
-                                                {transport.bank_code} - {transport.bank_account_number}
+                                                {transport.bankCode} - {transport.bankAccountNumber}
                                             </p>
-                                            <p className="text-xs text-muted-foreground">{transport.bank_account_holder}</p>
+                                            <p className="text-xs text-muted-foreground">{transport.bankAccountHolder}</p>
                                         </div>
                                     </div>
                                 )}
                             </div>
                         </div>
 
+                        <Separator />
+
+                        {/* Documents */}
+                        <div className="space-y-2">
+                            <p className="text-sm font-medium">Tài liệu</p>
+                            <div className="flex flex-wrap gap-4">
+                                {transport.licensePhotoUrl ? (
+                                    <a
+                                        href={transport.licensePhotoUrl}
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        className="text-sm text-accent-green hover:underline flex items-center gap-1"
+                                    >
+                                        <FileText className="h-4 w-4" />
+                                        GPKD
+                                    </a>
+                                ) : (
+                                    <span className="text-sm text-muted-foreground italic">Chưa có GPKD</span>
+                                )}
+                                {transport.insurancePhotoUrl && (
+                                    <a
+                                        href={transport.insurancePhotoUrl}
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        className="text-sm text-accent-green hover:underline flex items-center gap-1"
+                                    >
+                                        <FileText className="h-4 w-4" />
+                                        Bảo hiểm
+                                    </a>
+                                )}
+                                {transport.nationalIdPhotoFrontUrl && (
+                                    <a
+                                        href={transport.nationalIdPhotoFrontUrl}
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        className="text-sm text-accent-green hover:underline flex items-center gap-1"
+                                    >
+                                        <FileText className="h-4 w-4" />
+                                        CCCD (Trước)
+                                    </a>
+                                )}
+                                {transport.nationalIdPhotoBackUrl && (
+                                    <a
+                                        href={transport.nationalIdPhotoBackUrl}
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        className="text-sm text-accent-green hover:underline flex items-center gap-1"
+                                    >
+                                        <FileText className="h-4 w-4" />
+                                        CCCD (Sau)
+                                    </a>
+                                )}
+                            </div>
+                        </div>
+
                         {/* Show verification date and notes for approved/rejected */}
-                        {(transport.verification_status === "APPROVED" || transport.verification_status === "REJECTED") && (
+                        {(transport.verificationStatus === "APPROVED" || transport.verificationStatus === "REJECTED") && (
                             <>
                                 <Separator />
                                 <div className="text-sm text-muted-foreground">
                                     <p>
-                                        {transport.verification_status === "APPROVED" ? "Phê duyệt" : "Từ chối"} lúc:{" "}
-                                        {transport.verified_at ? new Date(transport.verified_at).toLocaleString("vi-VN") : "N/A"}
+                                        {transport.verificationStatus === "APPROVED" ? "Phê duyệt" : "Từ chối"} lúc:{" "}
+                                        {transport.verifiedAt ? new Date(transport.verifiedAt).toLocaleString("vi-VN") : "N/A"}
                                     </p>
+                                    {transport.verificationNotes && (
+                                        <p className="mt-1">
+                                            Ghi chú: {transport.verificationNotes}
+                                        </p>
+                                    )}
                                 </div>
                             </>
                         )}
@@ -255,7 +315,7 @@ export default function TransportVerificationPage() {
                             <>
                                 <Separator />
                                 <div className="flex gap-3 justify-end">
-                                    {transport.verification_status === "PENDING" && (
+                                    {transport.verificationStatus === "PENDING" && (
                                         <>
                                             <Button
                                                 variant="outline"
@@ -266,7 +326,7 @@ export default function TransportVerificationPage() {
                                                 Từ chối
                                             </Button>
                                             <Button
-                                                onClick={() => handleApprove(transport.transport_id)}
+                                                onClick={() => handleApprove(transport.transportId)}
                                                 className="bg-accent-green hover:bg-accent-green-dark"
                                             >
                                                 <CheckCircle className="mr-2 h-4 w-4" />
@@ -274,9 +334,9 @@ export default function TransportVerificationPage() {
                                             </Button>
                                         </>
                                     )}
-                                    {transport.verification_status === "REJECTED" && (
+                                    {transport.verificationStatus === "REJECTED" && (
                                         <Button
-                                            onClick={() => handleApprove(transport.transport_id)}
+                                            onClick={() => handleApprove(transport.transportId)}
                                             className="bg-accent-green hover:bg-accent-green-dark"
                                         >
                                             <RefreshCw className="mr-2 h-4 w-4" />
@@ -369,7 +429,7 @@ export default function TransportVerificationPage() {
                                     <>
                                         <div className="space-y-6">
                                             {transports.map((item) => (
-                                                <div key={item.transport.transport_id}>
+                                                <div key={item.transport.transportId}>
                                                     {renderTransportCard(item, activeTab !== "approved")}
                                                 </div>
                                             ))}
@@ -396,7 +456,7 @@ export default function TransportVerificationPage() {
                 open={rejectDialogOpen}
                 onOpenChange={setRejectDialogOpen}
                 onConfirm={handleRejectConfirm}
-                companyName={selectedTransport?.transport.company_name || ""}
+                companyName={selectedTransport?.transport.companyName || ""}
             />
         </DashboardLayout>
     )

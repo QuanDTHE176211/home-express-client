@@ -1,6 +1,15 @@
 "use client"
 
-import { useState, useEffect, useCallback } from "react"
+import type React from "react"
+import {
+  createContext,
+  useCallback,
+  useContext,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react"
 import type { Notification } from "@/types"
 import { apiClient } from "@/lib/api-client"
 import { useToast } from "@/hooks/use-toast"
@@ -12,7 +21,37 @@ interface NotificationSummary {
   latest_notifications: Notification[]
 }
 
-export function useNotifications() {
+interface NotificationPaginationState {
+  currentPage: number
+  totalPages: number
+  totalItems: number
+  itemsPerPage: number
+}
+
+type NotificationsContextValue = {
+  notifications: Notification[]
+  summary: NotificationSummary | null
+  loading: boolean
+  error: string | null
+  unreadCount: number
+  pagination: NotificationPaginationState
+  fetchNotifications: (page?: number, filters?: { isRead?: boolean; type?: string }) => Promise<void>
+  markAsRead: (notificationId: number) => Promise<void>
+  markAllAsRead: () => Promise<void>
+  deleteNotification: (notificationId: number) => Promise<void>
+  fetchUnreadCount: () => Promise<number | void>
+}
+
+const DEFAULT_PAGINATION: NotificationPaginationState = {
+  currentPage: 1,
+  totalPages: 1,
+  totalItems: 0,
+  itemsPerPage: 10,
+}
+
+const NotificationsContext = createContext<NotificationsContextValue | undefined>(undefined)
+
+export function NotificationsProvider({ children }: { children: React.ReactNode }) {
   const { toast } = useToast()
   const { user } = useAuth()
 
@@ -21,15 +60,21 @@ export function useNotifications() {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [unreadCount, setUnreadCount] = useState(0)
-  const [pagination, setPagination] = useState({
-    currentPage: 1,
-    totalPages: 1,
-    totalItems: 0,
-    itemsPerPage: 10,
-  })
+  const [pagination, setPagination] = useState<NotificationPaginationState>(DEFAULT_PAGINATION)
+  const initialLoadRef = useRef(false)
+
+  const resetState = useCallback(() => {
+    setNotifications([])
+    setSummary(null)
+    setUnreadCount(0)
+    setPagination(DEFAULT_PAGINATION)
+    setError(null)
+    setLoading(false)
+  }, [])
 
   const fetchNotifications = useCallback(
     async (page = 1, filters?: { isRead?: boolean; type?: string }) => {
+      if (!user) return
       setLoading(true)
       setError(null)
 
@@ -45,44 +90,49 @@ export function useNotifications() {
         setLoading(false)
       }
     },
-    [],
+    [user],
   )
 
-  const markAsRead = useCallback(async (notificationId: number) => {
-    try {
-      const updated = await apiClient.markNotificationAsRead(notificationId)
-      let wasUnread = false
+  const markAsRead = useCallback(
+    async (notificationId: number) => {
+      if (!user) return
+      try {
+        const updated = await apiClient.markNotificationAsRead(notificationId)
+        let wasUnread = false
 
-      setNotifications((prev) =>
-        prev.map((n) => {
-          if (n.notification_id === notificationId) {
-            wasUnread = !n.is_read
-            return { ...n, ...updated }
-          }
-          return n
-        }),
-      )
-
-      if (wasUnread) {
-        setUnreadCount((prev) => Math.max(0, prev - 1))
-        setSummary((prev) =>
-          prev
-            ? {
-                ...prev,
-                total_unread: Math.max(0, prev.total_unread - 1),
-                latest_notifications: prev.latest_notifications.map((n) =>
-                  n.notification_id === notificationId ? { ...n, ...updated } : n,
-                ),
-              }
-            : prev,
+        setNotifications((prev) =>
+          prev.map((n) => {
+            if (n.notification_id === notificationId) {
+              wasUnread = !n.is_read
+              return { ...n, ...updated }
+            }
+            return n
+          }),
         )
+
+        if (wasUnread) {
+          setUnreadCount((prev) => Math.max(0, prev - 1))
+          setSummary((prev) =>
+            prev
+              ? {
+                  ...prev,
+                  total_unread: Math.max(0, prev.total_unread - 1),
+                  latest_notifications: prev.latest_notifications.map((n) =>
+                    n.notification_id === notificationId ? { ...n, ...updated } : n,
+                  ),
+                }
+              : prev,
+          )
+        }
+      } catch (err) {
+        console.error("Failed to mark notification as read:", err)
       }
-    } catch (err) {
-      console.error("Failed to mark notification as read:", err)
-    }
-  }, [])
+    },
+    [user],
+  )
 
   const markAllAsRead = useCallback(async () => {
+    if (!user) return
     const unreadIds = notifications.filter((n) => !n.is_read).map((n) => n.notification_id)
     if (!unreadIds.length) return
 
@@ -116,10 +166,11 @@ export function useNotifications() {
         variant: "destructive",
       })
     }
-  }, [notifications, toast])
+  }, [notifications, toast, user])
 
   const deleteNotification = useCallback(
     async (notificationId: number) => {
+      if (!user) return
       try {
         await apiClient.deleteNotification(notificationId)
 
@@ -168,41 +219,75 @@ export function useNotifications() {
         })
       }
     },
-    [toast],
+    [toast, user],
   )
 
   const fetchUnreadCount = useCallback(async () => {
+    if (!user) {
+      resetState()
+      return 0
+    }
+
     try {
       const count = await apiClient.getUnreadNotificationCount()
       setUnreadCount(count)
       setSummary((prev) => (prev ? { ...prev, total_unread: count } : prev))
+      return count
     } catch (err) {
       console.error("Failed to fetch unread count:", err)
+      return 0
     }
-  }, [])
+  }, [resetState, user])
 
   useEffect(() => {
-    if (user) {
-      fetchNotifications()
-      fetchUnreadCount()
-    } else {
-      setNotifications([])
-      setUnreadCount(0)
-      setSummary(null)
+    if (!user) {
+      initialLoadRef.current = false
+      resetState()
+      return
     }
-  }, [user, fetchNotifications, fetchUnreadCount])
 
-  return {
-    notifications,
-    summary,
-    loading,
-    error,
-    unreadCount,
-    pagination,
-    fetchNotifications,
-    markAsRead,
-    markAllAsRead,
-    deleteNotification,
-    fetchUnreadCount,
+    if (initialLoadRef.current) return
+    initialLoadRef.current = true
+    fetchNotifications()
+    fetchUnreadCount()
+  }, [fetchNotifications, fetchUnreadCount, resetState, user])
+
+  const value = useMemo<NotificationsContextValue>(
+    () => ({
+      notifications,
+      summary,
+      loading,
+      error,
+      unreadCount,
+      pagination,
+      fetchNotifications,
+      markAsRead,
+      markAllAsRead,
+      deleteNotification,
+      fetchUnreadCount,
+    }),
+    [
+      deleteNotification,
+      error,
+      fetchNotifications,
+      fetchUnreadCount,
+      loading,
+      markAllAsRead,
+      markAsRead,
+      notifications,
+      pagination,
+      summary,
+      unreadCount,
+    ],
+  )
+
+  return <NotificationsContext.Provider value={value}>{children}</NotificationsContext.Provider>
+}
+
+export function useNotifications() {
+  const context = useContext(NotificationsContext)
+  if (!context) {
+    throw new Error("useNotifications must be used within a NotificationsProvider")
   }
+  return context
 }

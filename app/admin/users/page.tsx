@@ -119,7 +119,7 @@ function AdminUsersPageContent() {
 
   const handleSelectAll = (checked: boolean) => {
     if (checked) {
-      const allUserIds = new Set(users.map((u) => u.user.user_id))
+      const allUserIds = new Set(users.map((u) => u.user.userId))
       setSelectedUsers(allUserIds)
       setIsAllSelected(true)
     } else {
@@ -182,10 +182,10 @@ function AdminUsersPageContent() {
       const profile = item.profile as any
       return {
         email: item.user.email,
-        name: profile.full_name || profile.company_name || "N/A",
+        name: profile.fullName || profile.companyName || "N/A",
         role: item.user.role,
-        status: item.user.is_active ? "Hoạt động" : "Vô hiệu hóa",
-        created_at: formatExportDate(profile.created_at),
+        status: item.user.isActive ? "Hoạt động" : "Vô hiệu hóa",
+        created_at: formatExportDate(profile.createdAt),
       }
     })
 
@@ -308,20 +308,20 @@ function AdminUsersPageContent() {
         case "name":
           const aProfile = a.profile as any
           const bProfile = b.profile as any
-          aValue = aProfile.full_name || aProfile.company_name || ""
-          bValue = bProfile.full_name || bProfile.company_name || ""
+          aValue = aProfile.fullName || aProfile.companyName || ""
+          bValue = bProfile.fullName || bProfile.companyName || ""
           break
         case "role":
           aValue = a.user.role
           bValue = b.user.role
           break
         case "status":
-          aValue = a.user.is_active ? 1 : 0
-          bValue = b.user.is_active ? 1 : 0
+          aValue = a.user.isActive ? 1 : 0
+          bValue = b.user.isActive ? 1 : 0
           break
         case "created_at":
-          aValue = new Date((a.profile as any).created_at).getTime()
-          bValue = new Date((b.profile as any).created_at).getTime()
+          aValue = new Date((a.profile as any).createdAt).getTime()
+          bValue = new Date((b.profile as any).createdAt).getTime()
           break
         default:
           return 0
@@ -343,8 +343,8 @@ function AdminUsersPageContent() {
       ),
       cell: ({ row }) => (
         <Checkbox
-          checked={selectedUsers.has(row.original.user.user_id)}
-          onCheckedChange={(checked) => handleSelectUser(row.original.user.user_id, checked as boolean)}
+          checked={selectedUsers.has(row.original.user.userId)}
+          onCheckedChange={(checked) => handleSelectUser(row.original.user.userId, checked as boolean)}
           aria-label="Chọn hàng"
         />
       ),
@@ -357,11 +357,11 @@ function AdminUsersPageContent() {
       cell: ({ row }) => <span className="font-medium">{row.original.user.email}</span>,
     },
     {
-      accessorKey: "profile.full_name",
+      accessorKey: "profile.fullName",
       header: () => <SortableHeader label="Họ tên" sortKey="name" currentSort={sortConfig} onSort={handleSort} />,
       cell: ({ row }) => {
         const profile = row.original.profile as any
-        return <span>{profile.full_name || profile.company_name || "N/A"}</span>
+        return <span>{profile.fullName || profile.companyName || "N/A"}</span>
       },
     },
     {
@@ -370,23 +370,23 @@ function AdminUsersPageContent() {
       cell: ({ row }) => <RoleBadge role={row.original.user.role} />,
     },
     {
-      accessorKey: "user.is_active",
+      accessorKey: "user.isActive",
       header: () => <SortableHeader label="Trạng thái" sortKey="status" currentSort={sortConfig} onSort={handleSort} />,
-      cell: ({ row }) => <StatusBadge active={row.original.user.is_active} />,
+      cell: ({ row }) => <StatusBadge active={!!row.original.user.isActive} />,
     },
     {
-      accessorKey: "profile.created_at",
+      accessorKey: "profile.createdAt",
       header: () => (
         <SortableHeader label="Ngày tạo" sortKey="created_at" currentSort={sortConfig} onSort={handleSort} />
       ),
-      cell: ({ row }) => formatDate((row.original.profile as any).created_at),
+      cell: ({ row }) => formatDate((row.original.profile as any).createdAt),
     },
     {
       id: "actions",
       header: "",
       cell: ({ row }) => {
-        const isActive = row.original.user.is_active
-        const userId = row.original.user.user_id
+        const isActive = row.original.user.isActive
+        const userId = row.original.user.userId
 
         return (
           <DropdownMenu>

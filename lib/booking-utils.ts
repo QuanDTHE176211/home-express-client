@@ -8,6 +8,7 @@ import type { BookingStatus } from "@/types"
 const STATE_TRANSITIONS: Record<BookingStatus, BookingStatus[]> = {
   PENDING: ["QUOTED", "CANCELLED"],
   QUOTED: ["CONFIRMED", "CANCELLED"],
+  CONFIRMED_BY_CUSTOMER: ["IN_PROGRESS", "CANCELLED"],
   CONFIRMED: ["IN_PROGRESS", "CANCELLED"],
   IN_PROGRESS: ["COMPLETED", "CANCELLED"],
   COMPLETED: ["REVIEWED"],
@@ -29,6 +30,7 @@ export function getStatusOrder(status: BookingStatus): number {
   const order: Record<BookingStatus, number> = {
     PENDING: 1,
     QUOTED: 2,
+    CONFIRMED_BY_CUSTOMER: 3,
     CONFIRMED: 3,
     IN_PROGRESS: 4,
     COMPLETED: 5,
@@ -84,7 +86,7 @@ export function calculateCancellationFee(
  * Check if booking can be cancelled
  */
 export function canCancelBooking(status: BookingStatus): boolean {
-  return ["PENDING", "QUOTED", "CONFIRMED"].includes(status)
+  return ["PENDING", "QUOTED", "CONFIRMED", "CONFIRMED_BY_CUSTOMER"].includes(status)
 }
 
 /**
@@ -98,7 +100,7 @@ export function canAcceptQuotation(bookingStatus: BookingStatus): boolean {
  * Check if job can be started
  */
 export function canStartJob(bookingStatus: BookingStatus, isAssignedTransport: boolean): boolean {
-  return bookingStatus === "CONFIRMED" && isAssignedTransport
+  return (bookingStatus === "CONFIRMED" || bookingStatus === "CONFIRMED_BY_CUSTOMER") && isAssignedTransport
 }
 
 /**

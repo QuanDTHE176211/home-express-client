@@ -332,26 +332,16 @@ export default function CreateBookingPage() {
     setShowEstimations(false)
 
     try {
-      const response = await fetch("/api/estimation/auto", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          pickup_address: `${formData.pickupAddress.address}, ${formData.pickupAddress.ward}, ${formData.pickupAddress.district}, ${formData.pickupAddress.province}`,
-          delivery_address: `${formData.deliveryAddress.address}, ${formData.deliveryAddress.ward}, ${formData.deliveryAddress.district}, ${formData.deliveryAddress.province}`,
-          items: formData.items,
-          pickup_floor: formData.pickupAddress.floor,
-          delivery_floor: formData.deliveryAddress.floor,
-          has_elevator_pickup: formData.pickupAddress.hasElevator,
-          has_elevator_delivery: formData.deliveryAddress.hasElevator,
-          pickup_datetime: formData.preferredDate,
-        }),
+      const data = await apiClient.getAutoEstimations({
+        pickup_address: `${formData.pickupAddress.address}, ${formData.pickupAddress.ward}, ${formData.pickupAddress.district}, ${formData.pickupAddress.province}`,
+        delivery_address: `${formData.deliveryAddress.address}, ${formData.deliveryAddress.ward}, ${formData.deliveryAddress.district}, ${formData.deliveryAddress.province}`,
+        items: formData.items,
+        pickup_floor: formData.pickupAddress.floor,
+        delivery_floor: formData.deliveryAddress.floor,
+        has_elevator_pickup: formData.pickupAddress.hasElevator,
+        has_elevator_delivery: formData.deliveryAddress.hasElevator,
+        pickup_datetime: formData.preferredDate,
       })
-
-      if (!response.ok) {
-        throw new Error(`HTTP ${response.status}`)
-      }
-
-      const data = await response.json()
 
       if (data.success && data.estimations && data.estimations.length > 0) {
         setEstimations(data.estimations)

@@ -63,11 +63,13 @@ export function EditVehicleModal({ open, onOpenChange, vehicle, onSuccess }: Edi
   const vehicleType = watch("type")
   const hasTailLift = watch("hasTailLift")
   const hasTools = watch("hasTools")
+  const vehicleId = vehicle.vehicle_id ?? vehicle.vehicleId
 
   const onSubmit = async (data: VehicleFormData) => {
+    if (!vehicleId) return
     setIsSubmitting(true)
     try {
-      await apiClient.updateVehicle(vehicle.vehicle_id, {
+      await apiClient.updateVehicle(vehicleId, {
         type: data.type,
         model: data.model,
         licensePlate: data.licensePlate,

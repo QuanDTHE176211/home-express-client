@@ -151,12 +151,14 @@ export default function CustomerDashboard() {
               Chào mừng trở lại! Đây là tổng quan về các chuyến đi của bạn.
             </p>
           </div>
-          <Button asChild size="lg" className="bg-accent-green hover:bg-accent-green-dark">
-            <Link href="/customer/bookings/create">
-              <Plus className="mr-2 h-4 w-4" />
-              Đặt chuyến mới
-            </Link>
-          </Button>
+          {bookings.length > 0 && (
+            <Button asChild size="lg" className="bg-accent-green hover:bg-accent-green-dark">
+              <Link href="/customer/bookings/create">
+                <Plus className="mr-2 h-4 w-4" />
+                Đặt chuyến mới
+              </Link>
+            </Button>
+          )}
         </div>
 
         {/* Quick Actions Section when no bookings */}

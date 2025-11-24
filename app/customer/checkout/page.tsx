@@ -236,7 +236,7 @@ function CheckoutPageContent() {
                               variant="ghost"
                               size="icon"
                               className="h-6 w-6"
-                              onClick={() => handleCopy(bankInfo.accountNumber)}
+                              onClick={() => handleCopy(bankInfo.accountNumber || "")}
                             >
                               {copied ? <Check className="h-3 w-3" /> : <Copy className="h-3 w-3" />}
                             </Button>

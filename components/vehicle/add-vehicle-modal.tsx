@@ -71,7 +71,8 @@ export function AddVehicleModal({ open, onOpenChange, onSuccess }: AddVehicleMod
     try {
       // Use the uploadFile method from apiClient
       const response = await apiClient.uploadFile(file, "vehicle")
-      setValue("imageUrl", response.fileUrl)
+      const fileLocation = response.filePath || response.fileUrl
+      setValue("imageUrl", fileLocation)
       toast({
         title: "Thành công",
         description: "Đã tải ảnh lên thành công",

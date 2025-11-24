@@ -17,6 +17,7 @@ const getBookingStatusBadge = (status: BookingStatus) => {
   const statusConfig: Record<BookingStatus, { label: string; className: string }> = {
     PENDING: { label: "Chờ xử lý", className: "bg-amber-100 text-amber-700 border-amber-200" },
     QUOTED: { label: "Đã báo giá", className: "bg-blue-100 text-blue-700 border-blue-200" },
+    CONFIRMED_BY_CUSTOMER: { label: "Khách xác nhận", className: "bg-indigo-100 text-indigo-700 border-indigo-200" },
     CONFIRMED: { label: "Đã xác nhận", className: "bg-indigo-100 text-indigo-700 border-indigo-200" },
     IN_PROGRESS: { label: "Đang thực hiện", className: "bg-sky-100 text-sky-700 border-sky-200" },
     COMPLETED: { label: "Hoàn thành", className: "bg-accent-green/10 text-accent-green border-accent-green" },
@@ -124,7 +125,7 @@ export function BookingCard({ booking }: BookingCardProps) {
         {/* Distance & Items */}
         <div className="flex items-center gap-4 text-sm text-muted-foreground">
           <span>{booking.distanceKm} km</span>
-          <span>•</span>
+          <span>·</span>
           <span>{booking.itemsCount} món đồ</span>
         </div>
 

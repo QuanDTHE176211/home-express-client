@@ -97,7 +97,8 @@ function EditItemDialog({
       is_fragile: item.isFragile,
       requires_disassembly: item.requiresDisassembly,
       isExpanded: true,
-      isValid: true
+      isValid: true,
+      isTouched: true
     }
   })
 

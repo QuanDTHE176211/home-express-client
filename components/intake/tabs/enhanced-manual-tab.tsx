@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect, useCallback } from "react"
+import { useState, useEffect, useCallback, useMemo } from "react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
@@ -118,6 +118,7 @@ export function EnhancedManualTab({
   const [showQuickAdd, setShowQuickAdd] = useState(false)
   const [quickText, setQuickText] = useState("")
   const [isParsing, setIsParsing] = useState(false)
+  const [hasSubmitted, setHasSubmitted] = useState(false)
 
   // Combobox data
   const [brandOptions, setBrandOptions] = useState<Record<string, {value: string, label: string}[]>>({})
@@ -141,8 +142,26 @@ export function EnhancedManualTab({
     is_fragile: false,
     requires_disassembly: false,
     isExpanded: expanded,
-    isValid: false
+    isValid: false,
+    isTouched: false
   })
+
+  const isPlaceholderItem = useCallback((item: ManualItem) => {
+    const noPrimaryFields = !item.name.trim() && !item.brand.trim() && !item.model.trim() && !item.category.trim()
+    const noDetails = !item.declared_value.trim() && !item.weight_kg.trim() && !item.width_cm.trim() && !item.height_cm.trim() && !item.depth_cm.trim()
+    const noFlags = !item.is_fragile && !item.requires_disassembly
+    return !item.isTouched && noPrimaryFields && noDetails && noFlags && item.quantity === 1
+  }, [])
+
+  const meaningfulItems = useMemo(
+    () => items.filter((item) => !isPlaceholderItem(item)),
+    [items, isPlaceholderItem]
+  )
+
+  const validCount = useMemo(
+    () => meaningfulItems.filter((item) => item.isValid).length,
+    [meaningfulItems]
+  )
 
   // Initialize with one item if empty
   // useEffect(() => {
@@ -193,7 +212,8 @@ export function EnhancedManualTab({
           width_cm: c.width_cm ? String(c.width_cm) : "",
           height_cm: c.height_cm ? String(c.height_cm) : "",
           depth_cm: c.depth_cm ? String(c.depth_cm) : "",
-          isValid: true // Will be re-validated by effect
+          isValid: true, // Will be re-validated by effect
+          isTouched: true
         }
       })
 
@@ -278,7 +298,11 @@ export function EnhancedManualTab({
   const updateItem = (id: string, updates: Partial<ManualItem>) => {
     setItems(prev => prev.map(item => {
       if (item.id !== id) return item
-      return { ...item, ...updates }
+      const merged = { ...item, ...updates }
+      if (!("isTouched" in updates)) {
+        merged.isTouched = true
+      }
+      return merged
     }))
   }
 
@@ -287,18 +311,26 @@ export function EnhancedManualTab({
   }
 
   const handleSubmit = async () => {
-    const invalidItems = items.filter(i => !validateItem(i))
+    setHasSubmitted(true)
+    if (meaningfulItems.length === 0) {
+      const { toast } = await import("sonner")
+      toast.error("Them it nhat 1 vat pham de luu", {
+        description: "Nhap thu cong hoac dan danh sach truoc khi luu."
+      })
+      return
+    }
+    const invalidItems = meaningfulItems.filter(i => !validateItem(i))
     if (invalidItems.length > 0) {
       const { toast } = await import("sonner")
       toast.error(`Có ${invalidItems.length} vật phẩm chưa hợp lệ`, {
         description: "Vui lòng kiểm tra các mục có viền đỏ."
       })
-      // Expand the first invalid item
-      setItems(prev => prev.map(i => i.id === invalidItems[0].id ? { ...i, isExpanded: true } : i))
+      const invalidIds = new Set(invalidItems.map((i) => i.id))
+      setItems(prev => prev.map(i => invalidIds.has(i.id) ? { ...i, isExpanded: true, isTouched: true } : i))
       return
     }
 
-    const candidates: ItemCandidate[] = items.map((item, index) => ({
+    const candidates: ItemCandidate[] = meaningfulItems.map((item, index) => ({
       id: `manual-${Date.now()}-${index}`,
       name: item.name || `${item.brand} ${item.model}`.trim(),
       category_id: null,
@@ -332,6 +364,7 @@ export function EnhancedManualTab({
         toast.success(`Đã lưu ${candidates.length} vật phẩm`)
     }
     // Reset to one empty row
+    setHasSubmitted(false)
     setItems([createEmptyItem(true)])
   }
 
@@ -390,13 +423,17 @@ export function EnhancedManualTab({
 
       {/* Item List */}
       <div className="space-y-3">
-        {items.map((item, index) => (
-          <Card 
+        {items.map((item) => {
+          const isPlaceholder = isPlaceholderItem(item)
+          const showInvalid = (item.isTouched || hasSubmitted) && !item.isValid && !isPlaceholder
+          const showValid = item.isValid && !isPlaceholder
+          return (
+            <Card 
             key={item.id} 
             className={cn(
                 "transition-all duration-200",
                 item.isExpanded ? "border-primary/50 shadow-md" : "hover:border-primary/30",
-                !item.isExpanded && !item.isValid ? "border-destructive/50 bg-destructive/5" : ""
+                showInvalid ? "border-destructive/50 bg-destructive/5" : ""
             )}
           >
             {/* Header / Summary Row */}
@@ -409,13 +446,17 @@ export function EnhancedManualTab({
             >
                 {/* Status Icon */}
                 <div className="flex-shrink-0">
-                    {item.isValid ? (
+                    {showInvalid ? (
+                        <div className="h-6 w-6 rounded-full bg-red-100 dark:bg-red-900 flex items-center justify-center animate-pulse">
+                            <AlertCircle className="h-3 w-3 text-red-600 dark:text-red-400" />
+                        </div>
+                    ) : showValid ? (
                         <div className="h-6 w-6 rounded-full bg-green-100 dark:bg-green-900 flex items-center justify-center">
                             <Check className="h-3 w-3 text-green-600 dark:text-green-400" />
                         </div>
                     ) : (
-                        <div className="h-6 w-6 rounded-full bg-red-100 dark:bg-red-900 flex items-center justify-center animate-pulse">
-                            <AlertCircle className="h-3 w-3 text-red-600 dark:text-red-400" />
+                        <div className="h-6 w-6 rounded-full bg-muted text-muted-foreground flex items-center justify-center">
+                            <Info className="h-3 w-3" />
                         </div>
                     )}
                 </div>
@@ -451,17 +492,23 @@ export function EnhancedManualTab({
                         item={item} 
                         onChange={(updates) => updateItem(item.id, updates)} 
                         onDelete={() => removeRow(item.id)} 
+                        showValidation={hasSubmitted && !isPlaceholder}
                     />
                 </CardContent>
             )}
           </Card>
-        ))}
+          )
+        })}
       </div>
 
       {/* Footer Action */}
       <div className="flex gap-3 pt-4 border-t sticky bottom-0 bg-background/95 backdrop-blur py-4 z-10">
-        <Button onClick={handleSubmit} className="w-full bg-accent-green hover:bg-accent-green-dark h-11 text-base">
-            {submitButtonText} ({items.filter(i => i.isValid).length})
+        <Button 
+          onClick={handleSubmit} 
+          disabled={meaningfulItems.length === 0}
+          className="w-full bg-accent-green hover:bg-accent-green-dark h-11 text-base disabled:opacity-60 disabled:cursor-not-allowed"
+        >
+            {submitButtonText} ({validCount})
         </Button>
       </div>
     </div>

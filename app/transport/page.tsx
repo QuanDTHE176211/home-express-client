@@ -12,16 +12,19 @@ import { useAuth } from "@/contexts/auth-context"
 import { apiClient } from "@/lib/api-client"
 import { DashboardLayout } from "@/components/dashboard/dashboard-layout"
 import { StatCard } from "@/components/dashboard/stat-card"
+import { RevenueChart } from "@/components/dashboard/revenue-chart"
+import { BookingStatusChart } from "@/components/dashboard/booking-status-chart"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
-import { LayoutDashboard, Truck, Package, Star, TrendingUp, DollarSign, Clock, FileText } from "lucide-react"
+import { LayoutDashboard, Truck, Package, Star, TrendingUp, DollarSign, Clock, FileText, CreditCard } from "lucide-react"
 import { formatVND, formatDate } from "@/lib/format"
 import type { Quotation, TransportStats } from "@/types"
 import Link from "next/link"
 
 const navItems = [
   { label: "Tổng quan", href: "/transport", icon: "LayoutDashboard" },
+  { label: "Ví của tôi", href: "/transport/wallet", icon: "CreditCard" },
   { label: "Công việc", href: "/transport/jobs", icon: "Package" },
   { label: "Báo giá", href: "/transport/quotations", icon: "FileText" },
   { label: "Xe", href: "/transport/vehicles", icon: "Truck" },
@@ -34,6 +37,7 @@ export default function TransportDashboard() {
   const router = useRouter()
   const [stats, setStats] = useState<TransportStats | null>(null)
   const [quotations, setQuotations] = useState<Quotation[]>([])
+  const [walletStats, setWalletStats] = useState<any | null>(null)
   const [dataLoading, setDataLoading] = useState(true)
 
   useEffect(() => {
@@ -48,9 +52,10 @@ export default function TransportDashboard() {
 
       try {
         setDataLoading(true)
-        const [statsData, quotationsData] = await Promise.all([
+        const [statsData, quotationsData, earningsData] = await Promise.all([
           apiClient.getTransportStats(),
           apiClient.getTransportQuotations(),
+          apiClient.getEarningsStats(),
         ])
         // Add default values for missing properties
         const fullStats: TransportStats = {
@@ -63,6 +68,7 @@ export default function TransportDashboard() {
         }
         setStats(fullStats)
         setQuotations([])
+        setWalletStats(earningsData)
       } catch (error) {
       } finally {
         setDataLoading(false)
@@ -92,12 +98,24 @@ export default function TransportDashboard() {
         </div>
 
         {/* Stats Cards - 5 cards */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+          <StatCard
+            title="Số dư khả dụng"
+            value={walletStats ? formatVND(walletStats.current_balance || 0) : "0 ₫"}
+            icon={<CreditCard className="w-6 h-6" />}
+            variant="default"
+          />
+          <StatCard
+            title="Đang chờ xử lý"
+            value={walletStats ? formatVND(walletStats.pending_amount || 0) : "0 ₫"}
+            icon={<Clock className="w-6 h-6" />}
+            variant="warning"
+          />
           <StatCard
             title="Tổng thu nhập"
-            value={formatVND(stats.total_income)}
+            value={walletStats ? formatVND(walletStats.total_earnings || 0) : "0 ₫"}
             icon={<DollarSign className="w-6 h-6" />}
-            trend="+15%"
+            trend={walletStats?.growth_rate ? `${walletStats.growth_rate} so với tháng trước` : undefined}
             variant="success"
           />
           <StatCard
@@ -106,76 +124,21 @@ export default function TransportDashboard() {
             icon={<Package className="w-6 h-6" />}
             variant="default"
           />
-          <StatCard
-            title="Đang vận chuyển"
-            value={stats.in_progress_bookings}
-            icon={<Truck className="w-6 h-6" />}
-            variant="warning"
-          />
-          <StatCard
-            title="Đánh giá"
-            value={`${stats.average_rating}/5`}
-            icon={<Star className="w-6 h-6" />}
-            variant="success"
-          />
-          <StatCard
-            title="Tỷ lệ hoàn thành"
-            value={`${stats.completion_rate}%`}
-            icon={<TrendingUp className="w-6 h-6" />}
-            variant="success"
-          />
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           {/* Revenue Chart */}
-          <Card className="lg:col-span-2">
-            <CardHeader>
-              <CardTitle>Doanh thu theo tháng</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
-                {stats.monthly_revenue.map((item) => (
-                  <div key={item.month} className="flex items-center gap-4">
-                    <div className="w-12 text-sm font-medium text-muted-foreground">{item.month}</div>
-                    <div className="flex-1">
-                      <div className="h-8 bg-muted rounded-lg overflow-hidden">
-                        <div
-                          className="h-full bg-accent-green transition-all duration-300"
-                          style={{
-                            width: `${(item.revenue / Math.max(...stats.monthly_revenue.map((r) => r.revenue))) * 100}%`,
-                          }}
-                        />
-                      </div>
-                    </div>
-                    <div className="w-32 text-sm font-semibold text-right">{formatVND(item.revenue)}</div>
-                  </div>
-                ))}
-              </div>
-            </CardContent>
-          </Card>
+          <div className="lg:col-span-2">
+            <RevenueChart data={stats.monthly_revenue} />
+          </div>
 
-          {/* Quick Stats */}
-          <Card>
-            <CardHeader>
-              <CardTitle>Thống kê nhanh</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="p-4 bg-muted/50 rounded-lg">
-                <p className="text-sm text-muted-foreground mb-1">Báo giá chờ xử lý</p>
-                <p className="text-2xl font-bold">{stats.pending_quotations}</p>
-              </div>
-              <div className="p-4 bg-muted/50 rounded-lg">
-                <p className="text-sm text-muted-foreground mb-1">Tổng đơn hàng</p>
-                <p className="text-2xl font-bold">{stats.completed_bookings + stats.in_progress_bookings}</p>
-              </div>
-              <div className="p-4 bg-muted/50 rounded-lg">
-                <p className="text-sm text-muted-foreground mb-1">Doanh thu trung bình</p>
-                <p className="text-2xl font-bold">
-                  {formatVND(Math.round(stats.total_income / stats.completed_bookings))}
-                </p>
-              </div>
-            </CardContent>
-          </Card>
+          {/* Booking Status Chart */}
+          <div className="h-full">
+            <BookingStatusChart
+              completed={stats.completed_bookings}
+              inProgress={stats.in_progress_bookings}
+            />
+          </div>
         </div>
 
         {/* Pending Quotations */}

@@ -12,7 +12,13 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
-import { vehicleTypeLabels, vehicleTypeIcons, vehicleStatusLabels, vehicleStatusColors } from "@/lib/vehicle-utils"
+import {
+  normalizeVehicleStatus,
+  vehicleTypeLabels,
+  vehicleTypeIcons,
+  vehicleStatusLabels,
+  vehicleStatusColors,
+} from "@/lib/vehicle-utils"
 import type { Vehicle } from "@/types"
 
 interface VehicleCardProps {
@@ -24,21 +30,31 @@ interface VehicleCardProps {
 }
 
 export function VehicleCard({ vehicle, onEdit, onDelete, onConfigurePricing, onStatusChange }: VehicleCardProps) {
+  const vehicleId = vehicle.vehicle_id ?? vehicle.vehicleId
+  const vehicleType = (vehicle as any).type ?? (vehicle as any).vehicleType ?? "unknown"
+  const vehicleStatus = normalizeVehicleStatus(vehicle.status)
+
+  if (!vehicleId) {
+    return null
+  }
+
   return (
     <Card>
       <CardHeader>
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className="text-4xl">{vehicleTypeIcons[vehicle.type]}</div>
+            <div className="text-4xl">{vehicleTypeIcons[vehicleType] ?? "Vehicle"}</div>
             <div>
               <h3 className="font-semibold text-lg">{vehicle.model}</h3>
               <p className="text-sm text-muted-foreground">
-                {vehicle.license_plate} • {vehicleTypeLabels[vehicle.type]}
+                {vehicle.license_plate} - {vehicleTypeLabels[vehicleType] ?? "Xe"}
               </p>
             </div>
           </div>
           <div className="flex items-center gap-2">
-            <Badge className={vehicleStatusColors[vehicle.status]}>{vehicleStatusLabels[vehicle.status]}</Badge>
+            <Badge className={vehicleStatusColors[vehicleStatus as keyof typeof vehicleStatusColors] ?? ""}>
+              {vehicleStatusLabels[vehicleStatus as keyof typeof vehicleStatusLabels] ?? vehicleStatus}
+            </Badge>
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button variant="ghost" size="sm">
@@ -48,16 +64,11 @@ export function VehicleCard({ vehicle, onEdit, onDelete, onConfigurePricing, onS
               <DropdownMenuContent align="end">
                 <DropdownMenuLabel>Thay đổi trạng thái</DropdownMenuLabel>
                 <DropdownMenuSeparator />
-                <DropdownMenuItem onClick={() => onStatusChange(vehicle.vehicle_id, "available")}>
-                  Sẵn sàng
-                </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => onStatusChange(vehicle.vehicle_id, "in_use")}>
-                  Đang dùng
-                </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => onStatusChange(vehicle.vehicle_id, "maintenance")}>
+                <DropdownMenuItem onClick={() => onStatusChange(vehicleId, "ACTIVE")}>Sẵn sàng</DropdownMenuItem>
+                <DropdownMenuItem onClick={() => onStatusChange(vehicleId, "UNDER_MAINTENANCE")}>
                   Bảo trì
                 </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => onStatusChange(vehicle.vehicle_id, "inactive")}>
+                <DropdownMenuItem onClick={() => onStatusChange(vehicleId, "INACTIVE")}>
                   Không hoạt động
                 </DropdownMenuItem>
               </DropdownMenuContent>
@@ -108,14 +119,14 @@ export function VehicleCard({ vehicle, onEdit, onDelete, onConfigurePricing, onS
       </CardContent>
 
       <CardFooter className="flex gap-2">
-        <Button variant="outline" size="sm" onClick={() => onConfigurePricing(vehicle.vehicle_id)}>
+        <Button variant="outline" size="sm" onClick={() => onConfigurePricing(vehicleId)}>
           <Settings className="mr-2 h-4 w-4" />
           Cài đặt giá
         </Button>
         <Button variant="ghost" size="sm" onClick={() => onEdit(vehicle)}>
           <Edit className="h-4 w-4" />
         </Button>
-        <Button variant="ghost" size="sm" onClick={() => onDelete(vehicle.vehicle_id)}>
+        <Button variant="ghost" size="sm" onClick={() => onDelete(vehicleId)}>
           <Trash className="h-4 w-4" />
         </Button>
       </CardFooter>

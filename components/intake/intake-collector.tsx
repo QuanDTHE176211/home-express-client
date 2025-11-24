@@ -35,15 +35,34 @@ export function IntakeCollector({
       ...c,
       confidence: calculateConfidence(c)
     }))
-    setCandidates(prev => [...prev, ...candidatesWithScore])
+    setCandidates(prev => {
+      const next = [...prev, ...candidatesWithScore]
+      if (hideFooter) {
+        setTimeout(() => onContinue(next), 0)
+      }
+      return next
+    })
   }
 
   function removeCandidate(id: string) {
-    setCandidates(prev => prev.filter(c => c.id !== id))
+    setCandidates(prev => {
+      const next = prev.filter(c => c.id !== id)
+      if (hideFooter) {
+        setTimeout(() => onContinue(next), 0)
+      }
+      return next
+    })
   }
 
   function toggleEdit(id: string) {
     setEditingId(prev => (prev === id ? null : id))
+  }
+
+  function clearCandidates() {
+    setCandidates([])
+    if (hideFooter) {
+      setTimeout(() => onContinue([]), 0)
+    }
   }
 
   async function handleSaveToStorage() {
@@ -113,7 +132,8 @@ export function IntakeCollector({
       is_fragile: c.is_fragile || false,
       requires_disassembly: c.requires_disassembly || false,
       isExpanded: true,
-      isValid: true
+      isValid: true,
+      isTouched: true
     }
   }
 
@@ -131,7 +151,7 @@ export function IntakeCollector({
         <div className="pt-4 border-t">
           <div className="flex items-center justify-between mb-4">
             <h3 className="font-semibold text-lg">Danh sách đã thêm ({candidates.length})</h3>
-            <Button variant="destructive" size="sm" onClick={() => setCandidates([])}>
+            <Button variant="destructive" size="sm" onClick={clearCandidates}>
               Xóa tất cả
             </Button>
           </div>
@@ -216,7 +236,7 @@ export function IntakeCollector({
                                 }).format((candidate.metadata as any).declared_value)}
                               </Badge>
                             )}
-                            {candidate.confidence !== undefined && (
+                            {candidate.confidence != null && (
                               <Badge variant={candidate.confidence >= 0.8 ? "default" : candidate.confidence >= 0.5 ? "secondary" : "destructive"} className="text-xs">
                                 {Math.round(candidate.confidence * 100)}%
                               </Badge>

@@ -23,19 +23,34 @@ export const vehicleTypeIcons: Record<VehicleType, string> = {
 }
 
 // Vehicle status labels
-export const vehicleStatusLabels = {
-  available: "Sẵn sàng",
-  in_use: "Đang dùng",
-  maintenance: "Bảo trì",
-  inactive: "Không hoạt động",
+export type VehicleStatusKey = "ACTIVE" | "IN_USE" | "UNDER_MAINTENANCE" | "INACTIVE"
+
+export const vehicleStatusLabels: Record<VehicleStatusKey, string> = {
+  ACTIVE: "Sẵn sàng",
+  IN_USE: "Đang dùng",
+  UNDER_MAINTENANCE: "Bảo trì",
+  INACTIVE: "Không hoạt động",
 }
 
 // Vehicle status colors (Tailwind classes)
-export const vehicleStatusColors = {
-  available: "bg-success/10 text-success border-success",
-  in_use: "bg-warning/10 text-warning border-warning",
-  maintenance: "bg-error/10 text-error border-error",
-  inactive: "bg-gray-100 text-gray-800 border-gray-300",
+export const vehicleStatusColors: Record<VehicleStatusKey, string> = {
+  ACTIVE: "bg-success/10 text-success border-success",
+  IN_USE: "bg-warning/10 text-warning border-warning",
+  UNDER_MAINTENANCE: "bg-error/10 text-error border-error",
+  INACTIVE: "bg-gray-100 text-gray-800 border-gray-300",
+}
+
+export function normalizeVehicleStatus(status?: string): VehicleStatusKey {
+  if (!status) return "ACTIVE"
+
+  const value = status.toString().trim().toUpperCase()
+
+  if (value === "INACTIVE") return "INACTIVE"
+  if (value === "IN_USE") return "IN_USE"
+  if (value === "UNDER_MAINTENANCE" || value === "MAINTENANCE") return "UNDER_MAINTENANCE"
+  if (value === "AVAILABLE") return "ACTIVE"
+
+  return "ACTIVE"
 }
 
 /**
