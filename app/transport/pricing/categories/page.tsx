@@ -1,7 +1,7 @@
 "use client"
 
 import { useState } from "react"
-import { Save, LayoutDashboard, Truck, Package, Star, DollarSign, FileText } from "lucide-react"
+import { Save } from "lucide-react"
 import { DashboardLayout } from "@/components/dashboard/dashboard-layout"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
@@ -30,7 +30,6 @@ export default function CategoryPricingPage() {
   const { pricingRules, isLoading: pricingLoading, mutate } = useCategoryPricing(user?.user_id)
   const { toast } = useToast()
   const [savingIds, setSavingIds] = useState<Set<number>>(new Set())
-
   const [pricingData, setPricingData] = useState<Record<number, any>>({})
 
   const handlePriceChange = (categoryId: number, field: string, value: number) => {
@@ -122,10 +121,21 @@ export default function CategoryPricingPage() {
 
         {/* Categories List */}
         <div className="space-y-4">
+          {categories.length === 0 && (
+            <Card>
+              <CardContent className="py-6">
+                <p className="text-muted-foreground">
+                  Không tìm thấy danh mục nào. Vui lòng kiểm tra lại cấu hình hoặc trạng thái kích hoạt của danh mục.
+                </p>
+              </CardContent>
+            </Card>
+          )}
           {categories.map((category: any) => {
             const existingPricing = getExistingPricing(category.category_id)
             const currentData = pricingData[category.category_id] || existingPricing || {}
             const isSaving = savingIds.has(category.category_id)
+            const defaultWeight = category.default_weight_kg ?? "-"
+            const defaultVolume = category.default_volume_m3 ?? "-"
 
             return (
               <Card key={category.category_id} className="hover:shadow-md transition-shadow">
@@ -136,7 +146,7 @@ export default function CategoryPricingPage() {
                       <div>
                         <CardTitle>{category.name}</CardTitle>
                         <CardDescription>
-                          Mặc định: {category.default_weight_kg}kg, {category.default_volume_m3}m³
+                          Mặc định: {defaultWeight}kg, {defaultVolume}m³
                         </CardDescription>
                       </div>
                     </div>
@@ -236,11 +246,12 @@ export default function CategoryPricingPage() {
                     <>
                       <Separator />
                       <div className="p-3 bg-muted rounded-lg">
-                        <p className="text-sm font-medium mb-2">Ví dụ tính giá:</p>
+                        <p className="text-sm font-medium mb-2">Ước tính giá:</p>
                         <div className="space-y-1 text-sm text-muted-foreground">
                           <div>• Thường: {formatVND(currentData.pricePerUnit)}</div>
                           <div>
-                            • Dễ vỡ: {formatVND(currentData.pricePerUnit * (currentData.fragileMultiplier || 1.2))}
+                            • Dễ vỡ:{" "}
+                            {formatVND(currentData.pricePerUnit * (currentData.fragileMultiplier || 1.2))}
                           </div>
                           <div>
                             • Tháo lắp:{" "}
@@ -262,4 +273,3 @@ export default function CategoryPricingPage() {
     </DashboardLayout>
   )
 }
-

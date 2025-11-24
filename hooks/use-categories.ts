@@ -6,8 +6,12 @@ import { apiClient } from "@/lib/api-client"
  * SWR hook for fetching all categories (admin)
  */
 export function useCategories(params?: { isActive?: boolean; page?: number; size?: number }) {
+  const swrKey = params
+    ? ["/categories", params.isActive ?? "all", params.page ?? "page", params.size ?? "size"]
+    : "/categories"
+
   const { data, error, isLoading, mutate } = useSWR(
-    ["/admin/categories", params],
+    swrKey,
     () => apiClient.getAllCategories(params),
     {
       refreshInterval: 0,
@@ -15,8 +19,13 @@ export function useCategories(params?: { isActive?: boolean; page?: number; size
     },
   )
 
+  const categoriesData =
+    data?.data?.categories ||
+    data?.categories ||
+    (Array.isArray(data?.data) ? data?.data : Array.isArray(data) ? data : [])
+
   return {
-    categories: (data?.data?.categories as CategoryWithSizes[] | undefined) || [],
+    categories: (categoriesData as CategoryWithSizes[] | undefined) || [],
     isLoading,
     isError: error,
     mutate,

@@ -2121,17 +2121,53 @@ class ApiClient {
    * Get all categories
    */
   async getAllCategories(params?: { isActive?: boolean; page?: number; size?: number }) {
-    const queryParams = new URLSearchParams()
-    if (params?.isActive !== undefined) queryParams.append("isActive", params.isActive.toString())
-    if (params?.page !== undefined) queryParams.append("page", params.page.toString())
-    if (params?.size) queryParams.append("size", params.size.toString())
-
-    return this.request<{
-      success: boolean
-      data: {
-        categories: any[]
+    const buildQuery = (options?: { isActive?: boolean; page?: number; size?: number }) => {
+      const queryParams = new URLSearchParams()
+      if (options?.isActive !== undefined) {
+        // Transport endpoint expects "isActive", admin endpoint uses "activeOnly"
+        queryParams.append("isActive", options.isActive.toString())
+        queryParams.append("activeOnly", options.isActive.toString())
       }
-    }>(`/admin/categories?${queryParams.toString()}`)
+      if (options?.page !== undefined) queryParams.append("page", options.page.toString())
+      if (options?.size) queryParams.append("size", options.size.toString())
+      return queryParams.toString()
+    }
+
+    const query = buildQuery(params)
+
+    const normalizeResponse = (response: any) => {
+      if (!response) return []
+      if (Array.isArray(response)) return response
+      if (response.data?.categories) return response.data.categories
+      if (response.categories) return response.categories
+      if (response.data && Array.isArray(response.data)) return response.data
+      return []
+    }
+
+    const fetchCategories = async (queryString: string) => {
+      // Prefer transport-facing endpoint (correct snake_case payload), fall back to admin if unavailable
+      try {
+        return await this.request<any>(`/transport/categories${queryString ? `?${queryString}` : ""}`)
+      } catch (error) {
+        return await this.request<any>(`/admin/categories${queryString ? `?${queryString}` : ""}`)
+      }
+    }
+
+    let primaryResponse = await fetchCategories(query)
+    let categories = normalizeResponse(primaryResponse)
+
+    // If filtering by active returns empty, refetch without the active filter to avoid blank screens
+    if (params?.isActive && categories.length === 0) {
+      const fallbackQuery = buildQuery({ ...params, isActive: undefined })
+      const fallbackResponse = await fetchCategories(fallbackQuery)
+      categories = normalizeResponse(fallbackResponse)
+    }
+
+    return {
+      data: {
+        categories,
+      },
+    }
   }
 
   /**
@@ -3809,8 +3845,6 @@ class ApiClient {
  * Singleton instance of API client
  */
 export const apiClient = new ApiClient()
-
-
 
 
 
