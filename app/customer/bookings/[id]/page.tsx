@@ -57,8 +57,8 @@ export default function BookingDetailPage() {
   const [showUploadDialog, setShowUploadDialog] = useState(false)
   const [showFileDisputeDialog, setShowFileDisputeDialog] = useState(false)
   const [selectedDispute, setSelectedDispute] = useState<Dispute | null>(null)
-  const [disputes, setTranh ch?p] = useState<Dispute[]>([])
-  const [isLoadingTranh ch?p, setIsLoadingTranh ch?p] = useState(false)
+  const [disputes, setDisputes] = useState<Dispute[]>([])
+  const [isLoadingDisputes, setIsLoadingDisputes] = useState(false)
 
   // Load evidence
   const loadEvidence = useCallback(async () => {
@@ -77,27 +77,27 @@ export default function BookingDetailPage() {
   }, [bookingId])
 
   // Load disputes
-  const loadTranh ch?p = useCallback(async () => {
+  const loadDisputes = useCallback(async () => {
     if (!bookingId) return
 
-    setIsLoadingTranh ch?p(true)
+    setIsLoadingDisputes(true)
     try {
-      const response = await apiClient.getBookingTranh ch?p(bookingId)
-      setTranh ch?p(response.disputes)
+      const response = await apiClient.getBookingDisputes(bookingId)
+      setDisputes(response.disputes)
     } catch (error) {
       console.error("Failed to load disputes:", error)
       toast.error("Failed to load disputes")
     } finally {
-      setIsLoadingTranh ch?p(false)
+      setIsLoadingDisputes(false)
     }
   }, [bookingId])
 
   useEffect(() => {
     if (bookingId) {
       loadEvidence()
-      loadTranh ch?p()
+      loadDisputes()
     }
-  }, [bookingId, loadEvidence, loadTranh ch?p])
+  }, [bookingId, loadEvidence, loadDisputes])
 
   // Setup real-time SSE updates
   const { isConnected } = useBookingEvents({
@@ -125,7 +125,7 @@ export default function BookingDetailPage() {
     onDisputeUpdate: (event) => {
       console.log("[Booking Detail] Dispute update:", event)
       // Refresh disputes when there's an update
-      loadTranh ch?p()
+      loadDisputes()
     },
     showToasts: true,
     autoReconnect: true,
@@ -209,7 +209,7 @@ export default function BookingDetailPage() {
 
   const handleDisputeSuccess = () => {
     setShowFileDisputeDialog(false)
-    loadTranh ch?p()
+    loadDisputes()
     toast.success("Dispute filed successfully")
   }
 
@@ -465,12 +465,12 @@ export default function BookingDetailPage() {
               />
             </div>
 
-            {/* Tranh ch?p Section */}
+            {/* Disputes Section */}
             <div className="space-y-4">
               <div className="flex items-center justify-between">
                 <h3 className="text-lg font-semibold flex items-center gap-2">
                   <AlertCircle className="h-5 w-5" />
-                  Tranh ch?p
+                  Disputes
                   {disputes.length > 0 && (
                     <Badge variant="secondary">{disputes.length}</Badge>
                   )}
@@ -481,7 +481,7 @@ export default function BookingDetailPage() {
                   onClick={() => setShowFileDisputeDialog(true)}
                 >
                   <AlertCircle className="h-4 w-4 mr-2" />
-                  G?i tranh ch?p
+                  File disputes
                 </Button>
               </div>
 
@@ -493,7 +493,7 @@ export default function BookingDetailPage() {
                     onClick={handleBackToDisputeList}
                     className="mb-4"
                   >
-                    ← Quay lại tranh chấp
+                    ← Back to disputes
                   </Button>
                   <DisputeDetail
                     disputeId={selectedDispute.disputeId}
@@ -508,7 +508,7 @@ export default function BookingDetailPage() {
               )}
             </div>
 
-            {/* G?i tranh ch?p Dialog */}
+            {/* File Disputes Dialog */}
             <FileDisputeDialog
               open={showFileDisputeDialog}
               onOpenChange={setShowFileDisputeDialog}
